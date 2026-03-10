@@ -47,6 +47,11 @@ const initialData = {
   marketPage: {
     title: "Markt",
     subtitle: "Wertentwicklung unterschiedlicher Anlageklassen 2025",
+    chartData: [
+      { label: "Gold", value: "45%" },
+      { label: "Europa", value: "10%" },
+    ],
+    chartDataCsv: "label,value\nGold,45%\nEuropa,10%",
     footnote:
       "Angaben in Euro vor Kosten. Anleihen in Fremdwährung sind währungsbesichert.",
     analysisTitle: "Aktien",

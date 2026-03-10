@@ -1,5 +1,24 @@
 import React, { useRef } from "react";
 
+function escapeCsvCell(value) {
+  const text = String(value ?? "");
+  if (text.includes(",") || text.includes('"') || text.includes("\n")) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+  return text;
+}
+
+function buildChartDataCsv(rows) {
+  const dataRows = rows
+    .filter(
+      (row) =>
+        String(row?.label ?? "").trim().length > 0 ||
+        String(row?.value ?? "").trim().length > 0
+    )
+    .map((row) => `${escapeCsvCell(row.label)},${escapeCsvCell(row.value)}`);
+  return ["label,value", ...dataRows].join("\n");
+}
+
 function RichTextField({ label, value, onChange, placeholder }) {
   const textareaRef = useRef(null);
 
@@ -160,6 +179,54 @@ export default function EditorSidebar({
       ...prev,
       marketPage: { ...prev.marketPage, [key]: value },
     }));
+  };
+
+  const updateMarketChartRow = (index, key, value) => {
+    setFormData((prev) => {
+      const chartData = [...(prev.marketPage?.chartData || [])];
+      chartData[index] = { ...chartData[index], [key]: value };
+      return {
+        ...prev,
+        marketPage: {
+          ...prev.marketPage,
+          chartData,
+          chartDataCsv: buildChartDataCsv(chartData),
+        },
+      };
+    });
+  };
+
+  const addMarketChartRow = () => {
+    setFormData((prev) => {
+      const chartData = [
+        ...(prev.marketPage?.chartData || []),
+        { label: "", value: "" },
+      ];
+      return {
+        ...prev,
+        marketPage: {
+          ...prev.marketPage,
+          chartData,
+          chartDataCsv: buildChartDataCsv(chartData),
+        },
+      };
+    });
+  };
+
+  const removeMarketChartRow = (index) => {
+    setFormData((prev) => {
+      const chartData = (prev.marketPage?.chartData || []).filter(
+        (_, i) => i !== index
+      );
+      return {
+        ...prev,
+        marketPage: {
+          ...prev.marketPage,
+          chartData,
+          chartDataCsv: buildChartDataCsv(chartData),
+        },
+      };
+    });
   };
 
   const updateSecondPage = (key, value) => {
@@ -410,6 +477,50 @@ export default function EditorSidebar({
             onChange={(e) => updateMarketPage("subtitle", e.target.value)}
           />
         </label>
+        <div className="flex flex-col gap-3 rounded-2xl border border-[#efece7] bg-[#fbfaf8] p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-[#1c1c1c]">Chart Data</h3>
+            <button
+              type="button"
+              onClick={addMarketChartRow}
+              className="rounded-xl bg-scalable-200 px-3 py-2 text-xs font-semibold text-[#1c1c1c]"
+            >
+              Add Row
+            </button>
+          </div>
+          {(formData.marketPage?.chartData || []).map((row, index) => (
+            <div
+              className="grid grid-cols-[1.4fr_0.6fr_auto] items-center gap-2"
+              key={`market-chart-${index}`}
+            >
+              <input
+                type="text"
+                placeholder="Label"
+                value={row.label}
+                className="rounded-xl border border-[#d6d2cc] bg-white px-3 py-2 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200"
+                onChange={(e) =>
+                  updateMarketChartRow(index, "label", e.target.value)
+                }
+              />
+              <input
+                type="text"
+                placeholder="Value"
+                value={row.value}
+                className="rounded-xl border border-[#d6d2cc] bg-white px-3 py-2 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200"
+                onChange={(e) =>
+                  updateMarketChartRow(index, "value", e.target.value)
+                }
+              />
+              <button
+                type="button"
+                onClick={() => removeMarketChartRow(index)}
+                className="rounded-xl bg-[#f7f5f2] px-3 py-2 text-xs font-semibold text-[#6a6a6a]"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
         <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.14em] text-[#6a6a6a]">
           Footnote
           <textarea
