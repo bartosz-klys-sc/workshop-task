@@ -44,6 +44,10 @@ const dictionary = {
 const defaultMarketPage = {
   title: "Markt",
   subtitle: "Wertentwicklung unterschiedlicher Anlageklassen 2025",
+  chartData: [
+    { label: "Gold", value: "45%" },
+    { label: "Europa", value: "10%" },
+  ],
   footnote:
     "Angaben in Euro vor Kosten. Anleihen in Fremdwährung sind währungsbesichert.",
   analysisTitle: "Aktien",
@@ -63,6 +67,25 @@ export default function PdfDocument({ formData }) {
     sections: [],
     ...(formData.secondPage || {}),
   };
+  const parseMarketChartValue = (value) => {
+    const normalized = String(value ?? "")
+      .trim()
+      .replace(",", ".")
+      .replace(/[^0-9.-]/g, "");
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+  const marketChartRows = (marketPage.chartData || [])
+    .map((row) => ({
+      label: String(row?.label ?? "").trim(),
+      value: parseMarketChartValue(row?.value),
+      displayValue: String(row?.value ?? "").trim(),
+    }))
+    .filter((row) => row.label.length > 0 && row.value !== null);
+  const marketChartMaxValue = marketChartRows.reduce(
+    (acc, row) => Math.max(acc, row.value),
+    0
+  );
 
   const renderInline = (text, variant = "default") => {
     const isMarket = variant === "market";
@@ -385,6 +408,30 @@ export default function PdfDocument({ formData }) {
         <Text style={styles.marketTitle}>{marketPage.title}</Text>
         <Text style={styles.marketSubtitle}>{marketPage.subtitle}</Text>
 
+        {marketChartRows.length > 0 ? (
+          <View style={styles.marketChartBlock}>
+            {marketChartRows.map((row, index) => {
+              const barWidth =
+                marketChartMaxValue > 0
+                  ? Math.max(4, Math.round((row.value / marketChartMaxValue) * 290))
+                  : 4;
+              return (
+                <View style={styles.marketChartRow} key={`market-chart-${index}`}>
+                  <Text style={styles.marketChartLabel}>{row.label}</Text>
+                  <View style={styles.marketChartTrack}>
+                    <View style={[styles.marketChartBar, { width: barWidth }]} />
+                  </View>
+                  <Text style={styles.marketChartValue}>
+                    {row.displayValue || row.value}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        ) : (
+          <Text style={styles.marketChartFallback}>No chart data.</Text>
+        )}
+
         <Text style={styles.marketFootnote}>{marketPage.footnote}</Text>
 
         <View style={styles.marketAnalysisSection}>
@@ -567,6 +614,42 @@ const styles = StyleSheet.create({
   },
   marketFootnote: {
     marginTop: 2,
+    fontSize: 9,
+    color: "#000000",
+  },
+  marketChartBlock: {
+    marginBottom: 10,
+    gap: 6,
+  },
+  marketChartRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  marketChartLabel: {
+    width: 170,
+    fontSize: 9,
+    color: "#000000",
+  },
+  marketChartTrack: {
+    flex: 1,
+    height: 9,
+    borderRadius: 2,
+    backgroundColor: "#E5E7EB",
+    overflow: "hidden",
+  },
+  marketChartBar: {
+    height: "100%",
+    backgroundColor: "#111111",
+  },
+  marketChartValue: {
+    width: 42,
+    fontSize: 9,
+    textAlign: "right",
+    color: "#000000",
+  },
+  marketChartFallback: {
+    marginBottom: 10,
     fontSize: 9,
     color: "#000000",
   },
