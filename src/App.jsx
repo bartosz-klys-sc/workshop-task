@@ -6,7 +6,7 @@ import PdfDocument from "./PdfDocument.jsx";
 const initialData = {
   language: "de",
   brand: "Scalable",
-  reportType: "Weltportfolios Klassisch",
+  reportType: "Portfolio Report",
   reportDate: "31.12.2025",
   quarter: "Q4",
   year: "2025",
