@@ -83,6 +83,61 @@ function RichTextField({ label, value, onChange, placeholder }) {
   );
 }
 
+function InlineTextField({ label, value, onChange, placeholder, rows = 4 }) {
+  const textareaRef = useRef(null);
+
+  const applyWrap = (before, after = before) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = value.slice(start, end);
+    const nextValue =
+      value.slice(0, start) + before + selected + after + value.slice(end);
+    onChange(nextValue);
+    requestAnimationFrame(() => {
+      textarea.focus();
+      const cursor = start + before.length + selected.length + after.length;
+      textarea.setSelectionRange(cursor, cursor);
+    });
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between text-xs uppercase tracking-[0.14em] text-[#6a6a6a]">
+        <span>{label}</span>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => applyWrap("**")}
+            className="rounded-xl bg-[#e7e2db] px-2 py-1 text-[11px] font-semibold text-[#3b3b3b]"
+          >
+            Bold
+          </button>
+          <button
+            type="button"
+            onClick={() => applyWrap("*")}
+            className="rounded-xl bg-[#e7e2db] px-2 py-1 text-[11px] font-semibold text-[#3b3b3b]"
+          >
+            Italic
+          </button>
+        </div>
+      </div>
+      <textarea
+        ref={textareaRef}
+        rows={rows}
+        value={value}
+        placeholder={placeholder}
+        className="rounded-2xl border border-[#d6d2cc] bg-white px-4 py-3 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200"
+        onChange={(e) => onChange(e.target.value)}
+      />
+      <p className="text-xs text-[#6a6a6a]">
+        Supports **bold** and *italic* emphasis.
+      </p>
+    </div>
+  );
+}
+
 export default function EditorSidebar({
   formData,
   setFormData,
@@ -104,6 +159,47 @@ export default function EditorSidebar({
     setFormData((prev) => ({
       ...prev,
       marketPage: { ...prev.marketPage, [key]: value },
+    }));
+  };
+
+  const updateSecondPage = (key, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      secondPage: { ...prev.secondPage, [key]: value },
+    }));
+  };
+
+  const updateSecondPageSection = (index, key, value) => {
+    setFormData((prev) => {
+      const nextSections = [...(prev.secondPage?.sections || [])];
+      nextSections[index] = { ...nextSections[index], [key]: value };
+      return {
+        ...prev,
+        secondPage: { ...prev.secondPage, sections: nextSections },
+      };
+    });
+  };
+
+  const addSecondPageSection = () => {
+    setFormData((prev) => ({
+      ...prev,
+      secondPage: {
+        ...prev.secondPage,
+        sections: [
+          ...(prev.secondPage?.sections || []),
+          { title: "", content: "" },
+        ],
+      },
+    }));
+  };
+
+  const removeSecondPageSection = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      secondPage: {
+        ...prev.secondPage,
+        sections: (prev.secondPage?.sections || []).filter((_, i) => i !== index),
+      },
     }));
   };
 
@@ -235,6 +331,63 @@ export default function EditorSidebar({
           onChange={(value) => updateSection("ausblick", value)}
           placeholder="Describe the outlook and key risks..."
         />
+      </div>
+
+      <div className="flex flex-col gap-4 rounded-2xl border border-[#e7e2db] bg-white p-4 shadow-card">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold text-[#1c1c1c]">Second Page</h2>
+          <button
+            type="button"
+            onClick={addSecondPageSection}
+            className="rounded-xl bg-scalable-200 px-3 py-2 text-xs font-semibold text-[#1c1c1c]"
+          >
+            Add Section
+          </button>
+        </div>
+        <InlineTextField
+          label="Summary"
+          rows={4}
+          value={formData.secondPage?.summary || ""}
+          onChange={(value) => updateSecondPage("summary", value)}
+          placeholder="Intro text for the second page..."
+        />
+        {(formData.secondPage?.sections || []).map((section, index) => (
+          <div
+            key={`second-section-${index}`}
+            className="flex flex-col gap-3 rounded-2xl border border-[#efece7] bg-[#fbfaf8] p-4"
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#6a6a6a]">
+                Section {index + 1}
+              </p>
+              <button
+                type="button"
+                onClick={() => removeSecondPageSection(index)}
+                className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-[#6a6a6a]"
+              >
+                Remove
+              </button>
+            </div>
+            <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.14em] text-[#6a6a6a]">
+              Title
+              <input
+                type="text"
+                className="rounded-xl border border-[#d6d2cc] bg-white px-3 py-2 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200"
+                value={section.title || ""}
+                onChange={(e) =>
+                  updateSecondPageSection(index, "title", e.target.value)
+                }
+              />
+            </label>
+            <InlineTextField
+              label="Content"
+              value={section.content || ""}
+              onChange={(value) => updateSecondPageSection(index, "content", value)}
+              placeholder="Use **bold** or *italic* to emphasize..."
+              rows={4}
+            />
+          </div>
+        ))}
       </div>
 
       <div className="flex flex-col gap-3 rounded-2xl border border-[#e7e2db] bg-white p-4 shadow-card">

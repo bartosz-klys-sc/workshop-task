@@ -14,6 +14,32 @@ const initialData = {
     inKuerze: "2025 war ein starkes Aktienjahr...",
     ausblick: "Eine neue Ära mit massiven staatlichen Eingriffen...",
   },
+  secondPage: {
+    summary:
+      "Erfahren Sie die wichtigsten Hintergründe zur Wertentwicklung Ihrer Anlagestrategie im Gesamtjahr 2025. Erhalten Sie zudem einen Überblick über die wichtigsten Marktereignisse und unser Portfolio-Management in den vergangenen drei Monaten.",
+    sections: [
+      {
+        title: "Märkte",
+        content:
+          "**2025 war ein starkes Aktienjahr** - mit zweistelligen Zuwächsen an den wichtigsten Märkten...",
+      },
+      {
+        title: "Wertentwicklung",
+        content:
+          "Weltportfolios Klassisch legten je nach Risikokategorie um +5,8 % (Klassisch 30) bis +9,5 % (Klassisch 100) zu. Weltportfolios Klassisch + Gold legten um +9,8 % (Klassisch + Gold 30) bis +12 % (Klassisch + Gold 90) zu.",
+      },
+      {
+        title: "Portfolio-Management im 4. Quartal",
+        content:
+          "Vor dem Jahreswechsel setzten wir für Kundinnen und Kunden mit noch nicht ausgeschöpftem Freistellungsauftrag die Steueroptimierung um...",
+      },
+      {
+        title: "Ausblick",
+        content:
+          "Eine neue Ära mit massiven staatlichen Eingriffen in die Wirtschaft hat begonnen...",
+      },
+    ],
+  },
   portfolioPerformance: [
     { portfolio: "Weltportfolio Klassisch 40", ytd: 6.7 },
     { portfolio: "Weltportfolio Klassisch 60", ytd: 8.2 },
