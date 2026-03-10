@@ -83,7 +83,12 @@ function RichTextField({ label, value, onChange, placeholder }) {
   );
 }
 
-export default function EditorSidebar({ formData, setFormData }) {
+export default function EditorSidebar({
+  formData,
+  setFormData,
+  onGenerate,
+  isDirty,
+}) {
   const updateField = (key, value) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
@@ -141,9 +146,11 @@ export default function EditorSidebar({ formData, setFormData }) {
         </div>
         <button
           type="button"
-          className="rounded-full bg-scalable-500 px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(255,122,0,0.24)]"
+          onClick={onGenerate}
+          disabled={!isDirty}
+          className="rounded-full bg-scalable-500 px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(255,122,0,0.24)] disabled:cursor-not-allowed disabled:bg-[#d6d2cc] disabled:shadow-none"
         >
-          Publish
+          GENERATE
         </button>
       </div>
 
