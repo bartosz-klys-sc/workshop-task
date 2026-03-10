@@ -9,6 +9,10 @@ import {
   Path,
   G,
   Circle,
+  Defs,
+  LinearGradient,
+  Stop,
+  Rect,
   StyleSheet,
 } from "@react-pdf/renderer";
 
@@ -210,8 +214,20 @@ export default function PdfDocument({ formData }) {
       </Page>
 
       <Page size="A4" style={styles.secondPage}>
-        <View style={styles.secondPageBackgroundTop} />
-        <View style={styles.secondPageBackgroundBottom} />
+        <Svg
+          fixed
+          viewBox="0 0 595 842"
+          preserveAspectRatio="none"
+          style={styles.secondPageGradient}
+        >
+          <Defs>
+            <LinearGradient id="secondGradient" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0%" stopColor="#cae3e3" />
+              <Stop offset="100%" stopColor="#f0fbfb" />
+            </LinearGradient>
+          </Defs>
+          <Rect x="0" y="0" width="595" height="842" fill="url(#secondGradient)" />
+        </Svg>
         <View style={styles.secondPageContent}>
           <View style={styles.secondPageLogo}>
             <Svg viewBox="0 0 1360 640" style={styles.logoSvg}>
@@ -402,21 +418,12 @@ const styles = StyleSheet.create({
     color: "#111111",
     fontFamily: "Helvetica",
   },
-  secondPageBackgroundTop: {
+  secondPageGradient: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    height: "58%",
-    backgroundColor: "#cae3e3",
-  },
-  secondPageBackgroundBottom: {
-    position: "absolute",
-    left: 0,
-    right: 0,
     bottom: 0,
-    height: "42%",
-    backgroundColor: "#f0fbfb",
   },
   secondPageContent: {
     position: "relative",
