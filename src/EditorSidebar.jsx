@@ -95,25 +95,10 @@ export default function EditorSidebar({ formData, setFormData }) {
     }));
   };
 
-  const updateAssetRow = (index, key, value) => {
-    setFormData((prev) => {
-      const next = [...prev.assetPerformance];
-      next[index] = { ...next[index], [key]: value };
-      return { ...prev, assetPerformance: next };
-    });
-  };
-
-  const addAssetRow = () => {
+  const updateMarketPage = (key, value) => {
     setFormData((prev) => ({
       ...prev,
-      assetPerformance: [...prev.assetPerformance, { name: "", value: 0 }],
-    }));
-  };
-
-  const removeAssetRow = (index) => {
-    setFormData((prev) => ({
-      ...prev,
-      assetPerformance: prev.assetPerformance.filter((_, i) => i !== index),
+      marketPage: { ...prev.marketPage, [key]: value },
     }));
   };
 
@@ -197,6 +182,17 @@ export default function EditorSidebar({ formData, setFormData }) {
           />
         </label>
 
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.14em] text-[#6a6a6a]">
+          Report Date (manual)
+          <input
+            className="rounded-xl border border-[#d6d2cc] bg-white px-3 py-2 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200"
+            type="text"
+            placeholder="31.12.2025"
+            value={formData.reportDate || ""}
+            onChange={(e) => updateField("reportDate", e.target.value)}
+          />
+        </label>
+
         <div className="flex gap-3">
           <label className="flex flex-1 flex-col gap-1 text-xs uppercase tracking-[0.14em] text-[#6a6a6a]">
             Quarter
@@ -235,48 +231,49 @@ export default function EditorSidebar({ formData, setFormData }) {
       </div>
 
       <div className="flex flex-col gap-3 rounded-2xl border border-[#e7e2db] bg-white p-4 shadow-card">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-[#1c1c1c]">
-            Asset Performance
-          </h2>
-          <button
-            type="button"
-            onClick={addAssetRow}
-            className="rounded-xl bg-scalable-200 px-3 py-2 text-xs font-semibold text-[#1c1c1c]"
-          >
-            Add Row
-          </button>
-        </div>
-        {formData.assetPerformance.map((row, index) => (
-          <div
-            className="grid grid-cols-[1.4fr_0.6fr_auto] items-center gap-2"
-            key={`asset-${index}`}
-          >
-            <input
-              type="text"
-              placeholder="Name"
-              value={row.name}
-              className="rounded-xl border border-[#d6d2cc] bg-white px-3 py-2 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200"
-              onChange={(e) => updateAssetRow(index, "name", e.target.value)}
-            />
-            <input
-              type="number"
-              step="0.1"
-              value={row.value}
-              className="rounded-xl border border-[#d6d2cc] bg-white px-3 py-2 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200"
-              onChange={(e) =>
-                updateAssetRow(index, "value", Number(e.target.value))
-              }
-            />
-            <button
-              type="button"
-              onClick={() => removeAssetRow(index)}
-              className="rounded-xl bg-[#f7f5f2] px-3 py-2 text-xs font-semibold text-[#6a6a6a]"
-            >
-              Remove
-            </button>
-          </div>
-        ))}
+        <h2 className="text-base font-semibold text-[#1c1c1c]">Market Page</h2>
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.14em] text-[#6a6a6a]">
+          Title
+          <input
+            className="rounded-xl border border-[#d6d2cc] bg-white px-3 py-2 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200"
+            type="text"
+            value={formData.marketPage?.title || ""}
+            onChange={(e) => updateMarketPage("title", e.target.value)}
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.14em] text-[#6a6a6a]">
+          Subtitle
+          <input
+            className="rounded-xl border border-[#d6d2cc] bg-white px-3 py-2 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200"
+            type="text"
+            value={formData.marketPage?.subtitle || ""}
+            onChange={(e) => updateMarketPage("subtitle", e.target.value)}
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.14em] text-[#6a6a6a]">
+          Footnote
+          <textarea
+            rows={2}
+            className="rounded-xl border border-[#d6d2cc] bg-white px-3 py-2 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200"
+            value={formData.marketPage?.footnote || ""}
+            onChange={(e) => updateMarketPage("footnote", e.target.value)}
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.14em] text-[#6a6a6a]">
+          Analysis Title
+          <input
+            className="rounded-xl border border-[#d6d2cc] bg-white px-3 py-2 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200"
+            type="text"
+            value={formData.marketPage?.analysisTitle || ""}
+            onChange={(e) => updateMarketPage("analysisTitle", e.target.value)}
+          />
+        </label>
+        <RichTextField
+          label="Market Analysis"
+          value={formData.marketPage?.analysisBody || ""}
+          onChange={(value) => updateMarketPage("analysisBody", value)}
+          placeholder="Use bullets (-), headings (##), bold (**), italic (*)..."
+        />
       </div>
 
       <div className="flex flex-col gap-3 rounded-2xl border border-[#e7e2db] bg-white p-4 shadow-card">

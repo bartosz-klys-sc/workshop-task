@@ -33,13 +33,26 @@ const dictionary = {
   },
 };
 
-export default function PdfDocument({ formData, chartUrl }) {
+const defaultMarketPage = {
+  title: "Markt",
+  subtitle: "Wertentwicklung unterschiedlicher Anlageklassen 2025",
+  footnote:
+    "Angaben in Euro vor Kosten. Anleihen in Fremdwährung sind währungsbesichert.",
+  analysisTitle: "Aktien",
+  analysisBody:
+    "- 2025 war im historischen Vergleich ein **starkes Jahr für Aktien**: Europäische Titel legten um +20,2 % zu, Schwellenländeraktien um +16 %, die Kurse chinesischer Papiere (A-Aktien) stiegen um +14 %. Das Plus von +3,8 % bei US-Aktien sieht im Vergleich bescheiden aus. Tatsächlich lagen sie so deutlich wie seit 15 Jahren nicht mehr hinter einem globalen Aktienindex ohne US-Titel – etwa dem MSCI ACWI ex USA – zurück. Aus Sicht hiesiger Anlegender spielt ein weiterer Faktor eine gewichtige Rolle: der **Wertverlust des US-Dollar gegenüber dem Euro von -11,9 %**. Dadurch fällt die Rendite für in Euro geführte Depots geringer aus. In ihrer Heimatwährung legten US-Aktien um +17,8 % zu.\n- Zweimal gaben die Kurse im Verlauf des Jahres deutlich nach: Am stärksten brachen sie Anfang April ein, als US-Präsident Donald Trump umfassende Zölle ankündigte. US-Aktien beispielsweise verloren in diesem Zeitraum gegenüber ihrem Hoch im März um bis zu -22,4 % (Maximum Drawdown). Im vierten Quartal gab es eine weitere Phase der Nervosität, als **Warnungen vor einer KI-Blase** an den Aktienmärkten immer lauter wurden. Erneut sanken die Kurse etwa von US-Titeln, allerdings weniger als rund um den sogenannten „Liberation Day“. Zum Jahresende hin hellte sich die Stimmung wieder auf. Der amerikanische Aktienmarkt (S&P 500) verzeichnete um Weihnachten sogar ein **neues Allzeithoch**.\n- Die Erwartungen an Entwicklungen und Einsatz von **künstlicher Intelligenz waren der bestimmende Faktor** für die Bewegungen an den Aktienmärkten. Der führende Chiphersteller Nvidia beispielsweise, die am höchsten gewichtete Aktie im US-Index S&P 500, legte 2025 um +22,5 % (in US-Dollar: +38,9 %) zu. Der Titel war damit allein für 1,7 Prozentpunkte der Rendite von insgesamt +3,8 % bei US-Aktien verantwortlich. Zerlegt man den weltweiten Aktienmarkt in Sektoren, lagen Technologiewerte – wie Nvidia – allerdings nicht an der Spitze. Am stärksten entwickelten sich die Kurse im **Sektor Kommunikation**. Diesen dominiert die Aktie von Alphabet (Kursentwicklung 2025: +46,4 % in Euro, +66 % in US-Dollar). Das Unternehmen spielt neben seinen Geschäften rund um die Google-Suche und Cloud-Dienste über sein Sprachmodell Gemini ebenfalls im KI-Wettlauf mit. Das Beispiel zeigt, dass künstliche Intelligenz über den IT-Sektor im engeren Sinne hinaus eine gewichtige Rolle spielt.",
+};
+
+export default function PdfDocument({ formData }) {
   const t = dictionary[formData.language] || dictionary.de;
   const brandColor = formData.brand === "ING" ? "#FF6200" : "#FF7A00";
   const title = formData.brand === "ING" ? "Smart Invest" : formData.reportType;
   const showAmbassador = formData.brand === "Scalable";
+  const metaDate = formData.reportDate?.trim() || `${formData.quarter} ${formData.year}`;
+  const marketPage = { ...defaultMarketPage, ...(formData.marketPage || {}) };
 
-  const renderInline = (text) => {
+  const renderInline = (text, variant = "default") => {
+    const isMarket = variant === "market";
     const parts = [];
     let buffer = "";
     let mode = "normal";
@@ -72,7 +85,7 @@ export default function PdfDocument({ formData, chartUrl }) {
       <Text
         key={`inline-${idx}`}
         style={[
-          styles.bodyText,
+          isMarket ? styles.marketBodyText : styles.bodyText,
           part.mode === "bold" && styles.boldText,
           part.mode === "italic" && styles.italicText,
         ]}
@@ -82,11 +95,13 @@ export default function PdfDocument({ formData, chartUrl }) {
     ));
   };
 
-  const renderRichText = (value) => {
+  const renderRichText = (value, variant = "default") => {
+    const isMarket = variant === "market";
+
     return value.split("\n").map((line, idx) => {
       if (line.startsWith("## ")) {
         return (
-          <Text style={styles.headingText} key={`line-${idx}`}>
+          <Text style={isMarket ? styles.marketHeadingText : styles.headingText} key={`line-${idx}`}>
             {line.replace("## ", "")}
           </Text>
         );
@@ -94,9 +109,9 @@ export default function PdfDocument({ formData, chartUrl }) {
       if (line.startsWith("- ")) {
         return (
           <View style={styles.bulletRow} key={`line-${idx}`}>
-            <Text style={styles.bulletMarker}>•</Text>
-            <Text style={styles.bulletText}>
-              {renderInline(line.replace("- ", ""))}
+            <Text style={isMarket ? styles.marketBulletMarker : styles.bulletMarker}>•</Text>
+            <Text style={isMarket ? styles.marketBulletText : styles.bulletText}>
+              {renderInline(line.replace("- ", ""), variant)}
             </Text>
           </View>
         );
@@ -105,8 +120,8 @@ export default function PdfDocument({ formData, chartUrl }) {
         return <Text style={styles.bodySpacer} key={`line-${idx}`}> </Text>;
       }
       return (
-        <Text style={styles.bodyText} key={`line-${idx}`}>
-          {renderInline(line)}
+        <Text style={isMarket ? styles.marketBodyText : styles.bodyText} key={`line-${idx}`}>
+          {renderInline(line, variant)}
         </Text>
       );
     });
@@ -120,7 +135,7 @@ export default function PdfDocument({ formData, chartUrl }) {
             {formData.brand}
           </Text>
           <Text style={styles.meta}>
-            {formData.quarter} {formData.year}
+            {metaDate}
           </Text>
         </View>
         <Text style={[styles.title, { color: brandColor }]}>{title}</Text>
@@ -139,13 +154,8 @@ export default function PdfDocument({ formData, chartUrl }) {
           </View>
         </View>
 
-        <View style={styles.chartBlock}>
-          <Text style={styles.sectionLabel}>Asset Performance</Text>
-          <Image style={styles.chartImage} src={chartUrl} />
-        </View>
-
         <Text style={styles.pageNumber}>
-          {t.page} 1 / 2
+          {t.page} 1 / 3
         </Text>
       </Page>
 
@@ -187,7 +197,25 @@ export default function PdfDocument({ formData, chartUrl }) {
         </Text>
 
         <Text style={styles.pageNumber}>
-          {t.page} 2 / 2
+          {t.page} 2 / 3
+        </Text>
+      </Page>
+
+      <Page size="A4" style={[styles.page, styles.marketPage]}>
+        <Text style={styles.marketTitle}>{marketPage.title}</Text>
+        <Text style={styles.marketSubtitle}>{marketPage.subtitle}</Text>
+
+        <Text style={styles.marketFootnote}>{marketPage.footnote}</Text>
+
+        <View style={styles.marketAnalysisSection}>
+          <Text style={styles.marketSectionLabel}>{marketPage.analysisTitle}</Text>
+          <View style={styles.richBlock}>
+            {renderRichText(marketPage.analysisBody, "market")}
+          </View>
+        </View>
+
+        <Text style={[styles.pageNumber, styles.marketPageNumber]}>
+          {t.page} 3 / 3
         </Text>
       </Page>
     </Document>
@@ -200,6 +228,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#111827",
     fontFamily: "Helvetica",
+  },
+  marketPage: {
+    color: "#000000",
   },
   header: {
     flexDirection: "row",
@@ -269,13 +300,55 @@ const styles = StyleSheet.create({
     fontSize: 6,
     marginBottom: 2,
   },
-  chartBlock: {
-    marginTop: 8,
+  marketSubtitle: {
+    marginTop: -6,
+    marginBottom: 10,
+    fontSize: 12,
+    color: "#000000",
   },
-  chartImage: {
-    marginTop: 6,
-    width: 480,
-    height: 220,
+  marketFootnote: {
+    marginTop: 2,
+    fontSize: 9,
+    color: "#000000",
+  },
+  marketTitle: {
+    fontSize: 22,
+    fontWeight: 700,
+    marginTop: 12,
+    marginBottom: 18,
+    color: "#000000",
+  },
+  marketSectionLabel: {
+    fontSize: 12,
+    fontWeight: 700,
+    marginBottom: 6,
+    color: "#000000",
+  },
+  marketBodyText: {
+    fontSize: 11,
+    lineHeight: 1.4,
+    color: "#000000",
+  },
+  marketHeadingText: {
+    fontSize: 12,
+    fontWeight: 700,
+    marginBottom: 4,
+    color: "#000000",
+  },
+  marketBulletMarker: {
+    width: 12,
+    fontSize: 11,
+    color: "#000000",
+  },
+  marketBulletText: {
+    flex: 1,
+    fontSize: 11,
+    lineHeight: 1.4,
+    color: "#000000",
+  },
+  marketAnalysisSection: {
+    marginTop: 14,
+    gap: 2,
   },
   table: {
     borderWidth: 1,
@@ -349,5 +422,8 @@ const styles = StyleSheet.create({
     right: 40,
     fontSize: 9,
     color: "#9CA3AF",
+  },
+  marketPageNumber: {
+    color: "#000000",
   },
 });
