@@ -64,58 +64,65 @@ export default function PdfDocument({ formData, marketChartImageSrc }) {
     ...(formData.secondPage || {}),
   };
 
-  const renderInline = (text, variant = "default") => {
-    const isMarket = variant === "market";
-    const isSecond = variant === "second";
-    const isSecondSummary = variant === "secondSummary";
+  const parseInlineSegments = (text) => {
     const parts = [];
     let buffer = "";
-    let mode = "normal";
+    let isBold = false;
+    let isItalic = false;
 
     const flush = () => {
       if (buffer.length === 0) return;
-      parts.push({ text: buffer, mode });
+      parts.push({ text: buffer, bold: isBold, italic: isItalic });
       buffer = "";
     };
 
     for (let i = 0; i < text.length; i += 1) {
       const char = text[i];
       const next = text[i + 1];
+      const nextNext = text[i + 2];
+
+      if (char === "*" && next === "*" && nextNext === "*") {
+        flush();
+        isBold = !isBold;
+        isItalic = !isItalic;
+        i += 2;
+        continue;
+      }
       if (char === "*" && next === "*") {
         flush();
-        mode = mode === "bold" ? "normal" : "bold";
+        isBold = !isBold;
         i += 1;
         continue;
       }
       if (char === "*" && next !== "*") {
         flush();
-        mode = mode === "italic" ? "normal" : "italic";
+        isItalic = !isItalic;
         continue;
       }
       buffer += char;
     }
     flush();
+    return parts;
+  };
 
-    const baseStyle = isMarket
-      ? styles.marketBodyText
-      : isSecond
-      ? styles.secondPageBody
-      : isSecondSummary
-      ? styles.secondPageSummaryText
-      : styles.bodyText;
-
-    return parts.map((part, idx) => (
-      <Text
-        key={`inline-${idx}`}
-        style={[
-          baseStyle,
-          part.mode === "bold" && styles.boldText,
-          part.mode === "italic" && styles.italicText,
-        ]}
-      >
-        {part.text}
+  const renderInlineText = (text, baseStyle, key) => {
+    const safeText = text ?? "";
+    const segments = parseInlineSegments(safeText);
+    return (
+      <Text style={baseStyle} key={key}>
+        {segments.map((part, idx) => (
+          <Text
+            key={`seg-${key || "inline"}-${idx}`}
+            style={[
+              part.bold && styles.boldText,
+              part.italic && styles.italicText,
+            ]}
+          >
+            {part.text}
+          </Text>
+        ))}
       </Text>
-    ));
+    );
   };
 
   const renderRichText = (value, variant = "default") => {
@@ -123,29 +130,31 @@ export default function PdfDocument({ formData, marketChartImageSrc }) {
 
     return value.split("\n").map((line, idx) => {
       if (line.startsWith("## ")) {
-        return (
-          <Text style={isMarket ? styles.marketHeadingText : styles.headingText} key={`line-${idx}`}>
-            {line.replace("## ", "")}
-          </Text>
+        return renderInlineText(
+          line.replace("## ", ""),
+          isMarket ? styles.marketHeadingText : styles.headingText,
+          `line-${idx}`
         );
       }
       if (line.startsWith("- ")) {
         return (
           <View style={styles.bulletRow} key={`line-${idx}`}>
             <Text style={isMarket ? styles.marketBulletMarker : styles.bulletMarker}>•</Text>
-            <Text style={isMarket ? styles.marketBulletText : styles.bulletText}>
-              {renderInline(line.replace("- ", ""), variant)}
-            </Text>
+            {renderInlineText(
+              line.replace("- ", ""),
+              isMarket ? styles.marketBulletText : styles.bulletText,
+              `bullet-${idx}`
+            )}
           </View>
         );
       }
       if (line.trim().length === 0) {
         return <Text style={styles.bodySpacer} key={`line-${idx}`}> </Text>;
       }
-      return (
-        <Text style={isMarket ? styles.marketBodyText : styles.bodyText} key={`line-${idx}`}>
-          {renderInline(line, variant)}
-        </Text>
+      return renderInlineText(
+        line,
+        isMarket ? styles.marketBodyText : styles.bodyText,
+        `line-${idx}`
       );
     });
   };
@@ -155,10 +164,10 @@ export default function PdfDocument({ formData, marketChartImageSrc }) {
       if (line.trim().length === 0) {
         return <Text style={styles.secondPageSpacer} key={`second-summary-${idx}`}> </Text>;
       }
-      return (
-        <Text style={styles.secondPageSummaryText} key={`second-summary-${idx}`}>
-          {renderInline(line, "secondSummary")}
-        </Text>
+      return renderInlineText(
+        line,
+        styles.secondPageSummaryText,
+        `second-summary-${idx}`
       );
     });
 
@@ -167,10 +176,10 @@ export default function PdfDocument({ formData, marketChartImageSrc }) {
       if (line.trim().length === 0) {
         return <Text style={styles.secondPageSpacer} key={`second-line-${idx}`}> </Text>;
       }
-      return (
-        <Text style={styles.secondPageBody} key={`second-line-${idx}`}>
-          {renderInline(line, "second")}
-        </Text>
+      return renderInlineText(
+        line,
+        styles.secondPageBody,
+        `second-line-${idx}`
       );
     });
 
@@ -192,7 +201,7 @@ export default function PdfDocument({ formData, marketChartImageSrc }) {
             {metaDate}
           </Text>
         </View>
-        <Text style={[styles.title, { color: brandColor }]}>{title}</Text>
+        {renderInlineText(title, [styles.title, { color: brandColor }], "main-title")}
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>{t.summary}</Text>
@@ -318,7 +327,11 @@ export default function PdfDocument({ formData, marketChartImageSrc }) {
               <Text style={styles.secondPageSectionLabel}>{t.summary}</Text>
               {leftSections.map((section, index) => (
                 <View style={styles.secondPageSection} key={`second-left-${index}`}>
-                  <Text style={styles.secondPageSectionTitle}>{section.title}</Text>
+                  {renderInlineText(
+                    section.title || "",
+                    styles.secondPageSectionTitle,
+                    `second-left-title-${index}`
+                  )}
                   {renderSecondPageContent(section.content || "")}
                 </View>
               ))}
@@ -326,7 +339,11 @@ export default function PdfDocument({ formData, marketChartImageSrc }) {
             <View style={[styles.secondPageColumn, styles.secondPageColumnOffset]}>
               {rightSections.map((section, index) => (
                 <View style={styles.secondPageSection} key={`second-right-${index}`}>
-                  <Text style={styles.secondPageSectionTitle}>{section.title}</Text>
+                  {renderInlineText(
+                    section.title || "",
+                    styles.secondPageSectionTitle,
+                    `second-right-title-${index}`
+                  )}
                   {renderSecondPageContent(section.content || "")}
                 </View>
               ))}
@@ -340,7 +357,11 @@ export default function PdfDocument({ formData, marketChartImageSrc }) {
       </Page>
 
       <Page size="A4" style={styles.page}>
-        <Text style={[styles.title, { color: brandColor }]}>{t.performance}</Text>
+        {renderInlineText(
+          t.performance,
+          [styles.title, { color: brandColor }],
+          "performance-title"
+        )}
 
         <View style={styles.table}>
           <View style={styles.tableRowHeader}>
@@ -382,8 +403,12 @@ export default function PdfDocument({ formData, marketChartImageSrc }) {
       </Page>
 
       <Page size="A4" style={[styles.page, styles.marketPage]}>
-        <Text style={styles.marketTitle}>{marketPage.title}</Text>
-        <Text style={styles.marketSubtitle}>{marketPage.subtitle}</Text>
+        {renderInlineText(marketPage.title, styles.marketTitle, "market-title")}
+        {renderInlineText(
+          marketPage.subtitle,
+          styles.marketSubtitle,
+          "market-subtitle"
+        )}
 
         {marketChartImageSrc ? (
           <Image style={styles.marketChartImage} src={marketChartImageSrc} />
@@ -394,7 +419,11 @@ export default function PdfDocument({ formData, marketChartImageSrc }) {
         <Text style={styles.marketFootnote}>{marketPage.footnote}</Text>
 
         <View style={styles.marketAnalysisSection}>
-          <Text style={styles.marketSectionLabel}>{marketPage.analysisTitle}</Text>
+          {renderInlineText(
+            marketPage.analysisTitle,
+            styles.marketSectionLabel,
+            "market-analysis-title"
+          )}
           <View style={styles.richBlock}>
             {renderRichText(marketPage.analysisBody, "market")}
           </View>

@@ -28,12 +28,15 @@ function RichTextField({ label, value, onChange, placeholder }) {
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selected = value.slice(start, end);
+    const hasSelection = start !== end;
     const nextValue =
       value.slice(0, start) + before + selected + after + value.slice(end);
     onChange(nextValue);
     requestAnimationFrame(() => {
       textarea.focus();
-      const cursor = start + before.length + selected.length + after.length;
+      const cursor = hasSelection
+        ? start + before.length + selected.length + after.length
+        : start + before.length;
       textarea.setSelectionRange(cursor, cursor);
     });
   };
@@ -92,7 +95,7 @@ function RichTextField({ label, value, onChange, placeholder }) {
         rows={6}
         value={value}
         placeholder={placeholder}
-        className="rounded-2xl border border-[#d6d2cc] bg-white px-4 py-3 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200"
+        className="rounded-2xl border border-[#d6d2cc] bg-white px-4 py-3 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200 resize-none"
         onChange={(e) => onChange(e.target.value)}
       />
       <p className="text-xs text-[#6a6a6a]">
@@ -102,7 +105,14 @@ function RichTextField({ label, value, onChange, placeholder }) {
   );
 }
 
-function InlineTextField({ label, value, onChange, placeholder, rows = 4 }) {
+function InlineTextField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  rows = 4,
+  showHelp = true,
+}) {
   const textareaRef = useRef(null);
 
   const applyWrap = (before, after = before) => {
@@ -111,12 +121,15 @@ function InlineTextField({ label, value, onChange, placeholder, rows = 4 }) {
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selected = value.slice(start, end);
+    const hasSelection = start !== end;
     const nextValue =
       value.slice(0, start) + before + selected + after + value.slice(end);
     onChange(nextValue);
     requestAnimationFrame(() => {
       textarea.focus();
-      const cursor = start + before.length + selected.length + after.length;
+      const cursor = hasSelection
+        ? start + before.length + selected.length + after.length
+        : start + before.length;
       textarea.setSelectionRange(cursor, cursor);
     });
   };
@@ -147,12 +160,14 @@ function InlineTextField({ label, value, onChange, placeholder, rows = 4 }) {
         rows={rows}
         value={value}
         placeholder={placeholder}
-        className="rounded-2xl border border-[#d6d2cc] bg-white px-4 py-3 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200"
+        className="rounded-2xl border border-[#d6d2cc] bg-white px-4 py-3 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200 resize-none"
         onChange={(e) => onChange(e.target.value)}
       />
-      <p className="text-xs text-[#6a6a6a]">
-        Supports **bold** and *italic* emphasis.
-      </p>
+      {showHelp ? (
+        <p className="text-xs text-[#6a6a6a]">
+          Supports **bold** and *italic* emphasis.
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -343,15 +358,14 @@ export default function EditorSidebar({
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.14em] text-[#6a6a6a]">
-          Report Type
-          <input
-            className="rounded-xl border border-[#d6d2cc] bg-white px-3 py-2 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200"
-            type="text"
-            value={formData.reportType}
-            onChange={(e) => updateField("reportType", e.target.value)}
-          />
-        </label>
+        <InlineTextField
+          label="Report Type"
+          rows={2}
+          value={formData.reportType}
+          onChange={(value) => updateField("reportType", value)}
+          placeholder="Add **bold** or *italic* text..."
+          showHelp={false}
+        />
 
         <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.14em] text-[#6a6a6a]">
           Report Date (manual)
@@ -436,17 +450,14 @@ export default function EditorSidebar({
                 Remove
               </button>
             </div>
-            <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.14em] text-[#6a6a6a]">
-              Title
-              <input
-                type="text"
-                className="rounded-xl border border-[#d6d2cc] bg-white px-3 py-2 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200"
-                value={section.title || ""}
-                onChange={(e) =>
-                  updateSecondPageSection(index, "title", e.target.value)
-                }
-              />
-            </label>
+            <InlineTextField
+              label="Title"
+              rows={2}
+              value={section.title || ""}
+              onChange={(value) => updateSecondPageSection(index, "title", value)}
+              placeholder="Add **bold** or *italic* text..."
+              showHelp={false}
+            />
             <InlineTextField
               label="Content"
               value={section.content || ""}
@@ -460,24 +471,22 @@ export default function EditorSidebar({
 
       <div className="flex flex-col gap-3 rounded-2xl border border-[#e7e2db] bg-white p-4 shadow-card">
         <h2 className="text-base font-semibold text-[#1c1c1c]">Market Page</h2>
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.14em] text-[#6a6a6a]">
-          Title
-          <input
-            className="rounded-xl border border-[#d6d2cc] bg-white px-3 py-2 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200"
-            type="text"
-            value={formData.marketPage?.title || ""}
-            onChange={(e) => updateMarketPage("title", e.target.value)}
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.14em] text-[#6a6a6a]">
-          Subtitle
-          <input
-            className="rounded-xl border border-[#d6d2cc] bg-white px-3 py-2 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200"
-            type="text"
-            value={formData.marketPage?.subtitle || ""}
-            onChange={(e) => updateMarketPage("subtitle", e.target.value)}
-          />
-        </label>
+        <InlineTextField
+          label="Title"
+          rows={2}
+          value={formData.marketPage?.title || ""}
+          onChange={(value) => updateMarketPage("title", value)}
+          placeholder="Add **bold** or *italic* text..."
+          showHelp={false}
+        />
+        <InlineTextField
+          label="Subtitle"
+          rows={2}
+          value={formData.marketPage?.subtitle || ""}
+          onChange={(value) => updateMarketPage("subtitle", value)}
+          placeholder="Add **bold** or *italic* text..."
+          showHelp={false}
+        />
         <div className="flex flex-col gap-3 rounded-2xl border border-[#efece7] bg-[#fbfaf8] p-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-[#1c1c1c]">Chart Data</h3>
@@ -531,15 +540,14 @@ export default function EditorSidebar({
             onChange={(e) => updateMarketPage("footnote", e.target.value)}
           />
         </label>
-        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.14em] text-[#6a6a6a]">
-          Analysis Title
-          <input
-            className="rounded-xl border border-[#d6d2cc] bg-white px-3 py-2 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200"
-            type="text"
-            value={formData.marketPage?.analysisTitle || ""}
-            onChange={(e) => updateMarketPage("analysisTitle", e.target.value)}
-          />
-        </label>
+        <InlineTextField
+          label="Analysis Title"
+          rows={2}
+          value={formData.marketPage?.analysisTitle || ""}
+          onChange={(value) => updateMarketPage("analysisTitle", value)}
+          placeholder="Add **bold** or *italic* text..."
+          showHelp={false}
+        />
         <RichTextField
           label="Market Analysis"
           value={formData.marketPage?.analysisBody || ""}
