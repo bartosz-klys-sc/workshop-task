@@ -1,7 +1,19 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { PDFViewer } from "@react-pdf/renderer";
 import EditorSidebar from "./EditorSidebar.jsx";
+import MarketChartGraphic from "./MarketChartGraphic.jsx";
 import PdfDocument from "./PdfDocument.jsx";
+import { marketChartData } from "./marketChartData.js";
+
+const initialMarketChartData = marketChartData.map((row) => ({
+  label: row.label,
+  value: String(row.value),
+}));
+
+const initialMarketChartCsv = [
+  "label,value",
+  ...initialMarketChartData.map((row) => `${row.label},${row.value}`),
+].join("\n");
 
 const initialData = {
   language: "de",
@@ -47,11 +59,8 @@ const initialData = {
   marketPage: {
     title: "Markt",
     subtitle: "Wertentwicklung unterschiedlicher Anlageklassen 2025",
-    chartData: [
-      { label: "Gold", value: "45%" },
-      { label: "Europa", value: "10%" },
-    ],
-    chartDataCsv: "label,value\nGold,45%\nEuropa,10%",
+    chartData: initialMarketChartData,
+    chartDataCsv: initialMarketChartCsv,
     footnote:
       "Angaben in Euro vor Kosten. Anleihen in Fremdwährung sind währungsbesichert.",
     analysisTitle: "Aktien",
@@ -60,22 +69,167 @@ const initialData = {
   },
 };
 
+const parseMarketChartValue = (value) => {
+  const normalized = String(value ?? "")
+    .trim()
+    .replace(",", ".")
+    .replace(/[^0-9.-]/g, "");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const buildMarketChartRows = (rows = []) =>
+  rows
+    .map((row) => ({
+      label: String(row?.label ?? "").trim(),
+      value: parseMarketChartValue(row?.value),
+    }))
+    .filter((row) => row.label.length > 0 && row.value !== null);
+
+const waitForPaint = () =>
+  new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+  });
+
+async function captureSvgAsPng(svgElement, scale = 3) {
+  const serializer = new XMLSerializer();
+  let svgMarkup = serializer.serializeToString(svgElement);
+
+  if (!svgMarkup.includes('xmlns="http://www.w3.org/2000/svg"')) {
+    svgMarkup = svgMarkup.replace(
+      "<svg",
+      '<svg xmlns="http://www.w3.org/2000/svg"'
+    );
+  }
+  if (!svgMarkup.includes('xmlns:xlink="http://www.w3.org/1999/xlink"')) {
+    svgMarkup = svgMarkup.replace(
+      "<svg",
+      '<svg xmlns:xlink="http://www.w3.org/1999/xlink"'
+    );
+  }
+
+  const sourceWidth =
+    Number(svgElement.getAttribute("width")) ||
+    svgElement.viewBox?.baseVal?.width ||
+    531;
+  const sourceHeight =
+    Number(svgElement.getAttribute("height")) ||
+    svgElement.viewBox?.baseVal?.height ||
+    300;
+
+  const svgBlob = new Blob([svgMarkup], {
+    type: "image/svg+xml;charset=utf-8",
+  });
+  const objectUrl = URL.createObjectURL(svgBlob);
+
+  try {
+    const image = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = objectUrl;
+    });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(sourceWidth * scale);
+    canvas.height = Math.round(sourceHeight * scale);
+    const context = canvas.getContext("2d");
+    if (!context) return null;
+
+    context.scale(scale, scale);
+    context.drawImage(image, 0, 0, sourceWidth, sourceHeight);
+
+    return canvas.toDataURL("image/png", 1);
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 export default function App() {
   const [formData, setFormData] = useState(initialData);
   const [generatedData, setGeneratedData] = useState(initialData);
+  const [generatedMarketChartImage, setGeneratedMarketChartImage] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [chartCaptureRows, setChartCaptureRows] = useState(() =>
+    buildMarketChartRows(initialData.marketPage?.chartData || [])
+  );
+  const chartCaptureRootRef = useRef(null);
+
+  const generatedMarketChartRows = useMemo(
+    () => buildMarketChartRows(generatedData.marketPage?.chartData || []),
+    [generatedData]
+  );
 
   const isDirty = useMemo(
     () => JSON.stringify(formData) !== JSON.stringify(generatedData),
     [formData, generatedData]
   );
 
-  const handleGenerate = () => {
-    setGeneratedData(JSON.parse(JSON.stringify(formData)));
+  const captureMarketChartImage = async (rows) => {
+    if (rows.length === 0) return null;
+    setChartCaptureRows(rows);
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await waitForPaint();
+      const svgElement = chartCaptureRootRef.current?.querySelector("svg");
+      if (svgElement) {
+        return captureSvgAsPng(svgElement, 3);
+      }
+    }
+    return null;
+  };
+
+  useEffect(() => {
+    let isCancelled = false;
+    const seedInitialChartImage = async () => {
+      try {
+        const chartImage = await captureMarketChartImage(generatedMarketChartRows);
+        if (!isCancelled && chartImage) {
+          setGeneratedMarketChartImage(chartImage);
+        }
+      } catch (error) {
+        console.error("Failed to seed initial market chart image", error);
+      }
+    };
+
+    void seedInitialChartImage();
+    return () => {
+      isCancelled = true;
+    };
+  }, [generatedMarketChartRows]);
+
+  const handleGenerate = async () => {
+    if (isGenerating) return;
+    setIsGenerating(true);
+
+    const nextGeneratedData = JSON.parse(JSON.stringify(formData));
+    const nextChartRows = buildMarketChartRows(
+      nextGeneratedData.marketPage?.chartData || []
+    );
+
+    let chartImage = null;
+    try {
+      chartImage = await captureMarketChartImage(nextChartRows);
+    } catch (error) {
+      console.error("Failed to capture market chart image", error);
+    } finally {
+      setGeneratedMarketChartImage((previousImage) => {
+        if (nextChartRows.length === 0) return null;
+        return chartImage || previousImage;
+      });
+      setGeneratedData(nextGeneratedData);
+      setIsGenerating(false);
+    }
   };
 
   const pdfDocument = useMemo(
-    () => <PdfDocument formData={generatedData} />,
-    [generatedData]
+    () => (
+      <PdfDocument
+        formData={generatedData}
+        marketChartImageSrc={generatedMarketChartImage}
+      />
+    ),
+    [generatedData, generatedMarketChartImage]
   );
 
   return (
@@ -86,6 +240,7 @@ export default function App() {
           setFormData={setFormData}
           onGenerate={handleGenerate}
           isDirty={isDirty}
+          isGenerating={isGenerating}
         />
       </div>
       <div className="w-[60%] bg-[radial-gradient(circle_at_top,_#fff5eb_0%,_#f7f5f2_60%)] p-4 max-[1024px]:h-1/2 max-[1024px]:w-full">
@@ -94,6 +249,24 @@ export default function App() {
             {pdfDocument}
           </PDFViewer>
         </div>
+      </div>
+      <div
+        ref={chartCaptureRootRef}
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          left: -10000,
+          top: -10000,
+          opacity: 0,
+          pointerEvents: "none",
+        }}
+      >
+        <MarketChartGraphic
+          data={chartCaptureRows}
+          width={531}
+          height={300}
+          yTickCount={5}
+        />
       </div>
     </div>
   );

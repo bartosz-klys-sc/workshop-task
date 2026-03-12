@@ -44,10 +44,6 @@ const dictionary = {
 const defaultMarketPage = {
   title: "Markt",
   subtitle: "Wertentwicklung unterschiedlicher Anlageklassen 2025",
-  chartData: [
-    { label: "Gold", value: "45%" },
-    { label: "Europa", value: "10%" },
-  ],
   footnote:
     "Angaben in Euro vor Kosten. Anleihen in Fremdwährung sind währungsbesichert.",
   analysisTitle: "Aktien",
@@ -55,7 +51,7 @@ const defaultMarketPage = {
     "- 2025 war im historischen Vergleich ein **starkes Jahr für Aktien**: Europäische Titel legten um +20,2 % zu, Schwellenländeraktien um +16 %, die Kurse chinesischer Papiere (A-Aktien) stiegen um +14 %. Das Plus von +3,8 % bei US-Aktien sieht im Vergleich bescheiden aus. Tatsächlich lagen sie so deutlich wie seit 15 Jahren nicht mehr hinter einem globalen Aktienindex ohne US-Titel – etwa dem MSCI ACWI ex USA – zurück. Aus Sicht hiesiger Anlegender spielt ein weiterer Faktor eine gewichtige Rolle: der **Wertverlust des US-Dollar gegenüber dem Euro von -11,9 %**. Dadurch fällt die Rendite für in Euro geführte Depots geringer aus. In ihrer Heimatwährung legten US-Aktien um +17,8 % zu.\n- Zweimal gaben die Kurse im Verlauf des Jahres deutlich nach: Am stärksten brachen sie Anfang April ein, als US-Präsident Donald Trump umfassende Zölle ankündigte. US-Aktien beispielsweise verloren in diesem Zeitraum gegenüber ihrem Hoch im März um bis zu -22,4 % (Maximum Drawdown). Im vierten Quartal gab es eine weitere Phase der Nervosität, als **Warnungen vor einer KI-Blase** an den Aktienmärkten immer lauter wurden. Erneut sanken die Kurse etwa von US-Titeln, allerdings weniger als rund um den sogenannten „Liberation Day“. Zum Jahresende hin hellte sich die Stimmung wieder auf. Der amerikanische Aktienmarkt (S&P 500) verzeichnete um Weihnachten sogar ein **neues Allzeithoch**.\n- Die Erwartungen an Entwicklungen und Einsatz von **künstlicher Intelligenz waren der bestimmende Faktor** für die Bewegungen an den Aktienmärkten. Der führende Chiphersteller Nvidia beispielsweise, die am höchsten gewichtete Aktie im US-Index S&P 500, legte 2025 um +22,5 % (in US-Dollar: +38,9 %) zu. Der Titel war damit allein für 1,7 Prozentpunkte der Rendite von insgesamt +3,8 % bei US-Aktien verantwortlich. Zerlegt man den weltweiten Aktienmarkt in Sektoren, lagen Technologiewerte – wie Nvidia – allerdings nicht an der Spitze. Am stärksten entwickelten sich die Kurse im **Sektor Kommunikation**. Diesen dominiert die Aktie von Alphabet (Kursentwicklung 2025: +46,4 % in Euro, +66 % in US-Dollar). Das Unternehmen spielt neben seinen Geschäften rund um die Google-Suche und Cloud-Dienste über sein Sprachmodell Gemini ebenfalls im KI-Wettlauf mit. Das Beispiel zeigt, dass künstliche Intelligenz über den IT-Sektor im engeren Sinne hinaus eine gewichtige Rolle spielt.",
 };
 
-export default function PdfDocument({ formData }) {
+export default function PdfDocument({ formData, marketChartImageSrc }) {
   const t = dictionary[formData.language] || dictionary.de;
   const brandColor = formData.brand === "ING" ? "#FF6200" : "#FF7A00";
   const title = formData.brand === "ING" ? "Smart Invest" : formData.reportType;
@@ -67,25 +63,6 @@ export default function PdfDocument({ formData }) {
     sections: [],
     ...(formData.secondPage || {}),
   };
-  const parseMarketChartValue = (value) => {
-    const normalized = String(value ?? "")
-      .trim()
-      .replace(",", ".")
-      .replace(/[^0-9.-]/g, "");
-    const parsed = Number(normalized);
-    return Number.isFinite(parsed) ? parsed : null;
-  };
-  const marketChartRows = (marketPage.chartData || [])
-    .map((row) => ({
-      label: String(row?.label ?? "").trim(),
-      value: parseMarketChartValue(row?.value),
-      displayValue: String(row?.value ?? "").trim(),
-    }))
-    .filter((row) => row.label.length > 0 && row.value !== null);
-  const marketChartMaxValue = marketChartRows.reduce(
-    (acc, row) => Math.max(acc, row.value),
-    0
-  );
 
   const renderInline = (text, variant = "default") => {
     const isMarket = variant === "market";
@@ -408,28 +385,10 @@ export default function PdfDocument({ formData }) {
         <Text style={styles.marketTitle}>{marketPage.title}</Text>
         <Text style={styles.marketSubtitle}>{marketPage.subtitle}</Text>
 
-        {marketChartRows.length > 0 ? (
-          <View style={styles.marketChartBlock}>
-            {marketChartRows.map((row, index) => {
-              const barWidth =
-                marketChartMaxValue > 0
-                  ? Math.max(4, Math.round((row.value / marketChartMaxValue) * 290))
-                  : 4;
-              return (
-                <View style={styles.marketChartRow} key={`market-chart-${index}`}>
-                  <Text style={styles.marketChartLabel}>{row.label}</Text>
-                  <View style={styles.marketChartTrack}>
-                    <View style={[styles.marketChartBar, { width: barWidth }]} />
-                  </View>
-                  <Text style={styles.marketChartValue}>
-                    {row.displayValue || row.value}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
+        {marketChartImageSrc ? (
+          <Image style={styles.marketChartImage} src={marketChartImageSrc} />
         ) : (
-          <Text style={styles.marketChartFallback}>No chart data.</Text>
+          <Text style={styles.marketChartFallback}>Chart preview unavailable.</Text>
         )}
 
         <Text style={styles.marketFootnote}>{marketPage.footnote}</Text>
@@ -617,36 +576,10 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: "#000000",
   },
-  marketChartBlock: {
+  marketChartImage: {
+    width: 515,
+    height: 291,
     marginBottom: 10,
-    gap: 6,
-  },
-  marketChartRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  marketChartLabel: {
-    width: 170,
-    fontSize: 9,
-    color: "#000000",
-  },
-  marketChartTrack: {
-    flex: 1,
-    height: 9,
-    borderRadius: 2,
-    backgroundColor: "#E5E7EB",
-    overflow: "hidden",
-  },
-  marketChartBar: {
-    height: "100%",
-    backgroundColor: "#111111",
-  },
-  marketChartValue: {
-    width: 42,
-    fontSize: 9,
-    textAlign: "right",
-    color: "#000000",
   },
   marketChartFallback: {
     marginBottom: 10,

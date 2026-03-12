@@ -162,6 +162,7 @@ export default function EditorSidebar({
   setFormData,
   onGenerate,
   isDirty,
+  isGenerating = false,
 }) {
   const updateField = (key, value) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -310,10 +311,10 @@ export default function EditorSidebar({
         <button
           type="button"
           onClick={onGenerate}
-          disabled={!isDirty}
+          disabled={!isDirty || isGenerating}
           className="rounded-full bg-scalable-500 px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(255,122,0,0.24)] disabled:cursor-not-allowed disabled:bg-[#d6d2cc] disabled:shadow-none"
         >
-          GENERATE
+          {isGenerating ? "GENERATING..." : "GENERATE"}
         </button>
       </div>
 
