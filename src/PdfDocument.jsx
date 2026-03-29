@@ -108,15 +108,20 @@ export default function PdfDocument({ formData, marketChartImageSrc }) {
   const renderInlineText = (text, baseStyle, key) => {
     const safeText = text ?? "";
     const segments = parseInlineSegments(safeText);
+
+    const resolveInlineStyle = (part) => {
+      if (part.bold && part.italic) return styles.boldItalicText;
+      if (part.bold) return styles.boldText;
+      if (part.italic) return styles.italicText;
+      return null;
+    };
+
     return (
       <Text style={baseStyle} key={key}>
         {segments.map((part, idx) => (
           <Text
             key={`seg-${key || "inline"}-${idx}`}
-            style={[
-              part.bold && styles.boldText,
-              part.italic && styles.italicText,
-            ]}
+            style={resolveInlineStyle(part)}
           >
             {part.text}
           </Text>
@@ -560,10 +565,13 @@ const styles = StyleSheet.create({
     color: "#1F2937",
   },
   boldText: {
-    fontWeight: 700,
+    fontFamily: "Helvetica-Bold",
   },
   italicText: {
-    fontStyle: "italic",
+    fontFamily: "Helvetica-Oblique",
+  },
+  boldItalicText: {
+    fontFamily: "Helvetica-BoldOblique",
   },
   headingText: {
     fontSize: 12,
