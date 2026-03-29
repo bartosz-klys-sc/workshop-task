@@ -113,7 +113,7 @@ export default function PdfDocument({ formData, marketChartImageSrc }) {
       if (part.bold && part.italic) return styles.boldText;
       if (part.bold) return styles.boldText;
       if (part.italic) return styles.italicText;
-      return null;
+      return undefined;
     };
 
     return (
@@ -121,7 +121,7 @@ export default function PdfDocument({ formData, marketChartImageSrc }) {
         {segments.map((part, idx) => (
           <Text
             key={`seg-${key || "inline"}-${idx}`}
-            style={resolveInlineStyle(part)}
+            style={resolveInlineStyle(part) || {}}
           >
             {part.text}
           </Text>
