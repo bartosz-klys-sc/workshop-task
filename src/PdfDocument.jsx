@@ -110,7 +110,7 @@ export default function PdfDocument({ formData, marketChartImageSrc }) {
     const segments = parseInlineSegments(safeText);
 
     const resolveInlineStyle = (part) => {
-      if (part.bold && part.italic) return styles.boldItalicText;
+      if (part.bold && part.italic) return styles.boldText;
       if (part.bold) return styles.boldText;
       if (part.italic) return styles.italicText;
       return null;
@@ -569,9 +569,6 @@ const styles = StyleSheet.create({
   },
   italicText: {
     fontFamily: "Helvetica-Oblique",
-  },
-  boldItalicText: {
-    fontFamily: "Helvetica-BoldOblique",
   },
   headingText: {
     fontSize: 12,
