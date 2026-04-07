@@ -15,6 +15,24 @@ const initialMarketChartCsv = [
   ...initialMarketChartData.map((row) => `${row.label},${row.value}`),
 ].join("\n");
 
+const initialMarketAnalysisSections = [
+  {
+    title: "Aktien",
+    content:
+      "- 2025 war im historischen Vergleich ein **starkes Jahr für Aktien**: Europäische Titel legten um +20,2 % zu, Schwellenländeraktien um +16 %, die Kurse chinesischer Papiere (A-Aktien) stiegen um +14 %. Das Plus von +3,8 % bei US-Aktien sieht im Vergleich bescheiden aus. Tatsächlich lagen sie so deutlich wie seit 15 Jahren nicht mehr hinter einem globalen Aktienindex ohne US-Titel – etwa dem MSCI ACWI ex USA – zurück. Aus Sicht hiesiger Anlegender spielt ein weiterer Faktor eine gewichtige Rolle: der **Wertverlust des US-Dollar gegenüber dem Euro von -11,9 %**. Dadurch fällt die Rendite für in Euro geführte Depots geringer aus. In ihrer Heimatwährung legten US-Aktien um +17,8 % zu.",
+  },
+];
+
+const initialWertentwicklungChartData = marketChartData.map((row) => ({
+  label: row.label,
+  value: String(row.value),
+}));
+
+const initialWertentwicklungChartCsv = [
+  "label,value",
+  ...initialWertentwicklungChartData.map((row) => `${row.label},${row.value}`),
+].join("\n");
+
 const initialData = {
   language: "de",
   brand: "Scalable",
@@ -27,6 +45,7 @@ const initialData = {
     ausblick: "Eine neue Ära mit massiven staatlichen Eingriffen...",
   },
   secondPage: {
+    title: "In Kürze",
     summary:
       "Erfahren Sie die wichtigsten Hintergründe zur Wertentwicklung Ihrer Anlagestrategie im Gesamtjahr 2025. Erhalten Sie zudem einen Überblick über die wichtigsten Marktereignisse und unser Portfolio-Management in den vergangenen drei Monaten.",
     sections: [
@@ -63,10 +82,61 @@ const initialData = {
     chartDataCsv: initialMarketChartCsv,
     footnote:
       "Angaben in Euro vor Kosten. Anleihen in Fremdwährung sind währungsbesichert.",
-    analysisTitle: "Aktien",
-    analysisBody:
-      "- 2025 war im historischen Vergleich ein **starkes Jahr für Aktien**: Europäische Titel legten um +20,2 % zu, Schwellenländeraktien um +16 %, die Kurse chinesischer Papiere (A-Aktien) stiegen um +14 %. Das Plus von +3,8 % bei US-Aktien sieht im Vergleich bescheiden aus. Tatsächlich lagen sie so deutlich wie seit 15 Jahren nicht mehr hinter einem globalen Aktienindex ohne US-Titel – etwa dem MSCI ACWI ex USA – zurück. Aus Sicht hiesiger Anlegender spielt ein weiterer Faktor eine gewichtige Rolle: der **Wertverlust des US-Dollar gegenüber dem Euro von -11,9 %**. Dadurch fällt die Rendite für in Euro geführte Depots geringer aus. In ihrer Heimatwährung legten US-Aktien um +17,8 % zu.\n- Zweimal gaben die Kurse im Verlauf des Jahres deutlich nach: Am stärksten brachen sie Anfang April ein, als US-Präsident Donald Trump umfassende Zölle ankündigte. US-Aktien beispielsweise verloren in diesem Zeitraum gegenüber ihrem Hoch im März um bis zu -22,4 % (Maximum Drawdown). Im vierten Quartal gab es eine weitere Phase der Nervosität, als **Warnungen vor einer KI-Blase** an den Aktienmärkten immer lauter wurden. Erneut sanken die Kurse etwa von US-Titeln, allerdings weniger als rund um den sogenannten „Liberation Day“. Zum Jahresende hin hellte sich die Stimmung wieder auf. Der amerikanische Aktienmarkt (S&P 500) verzeichnete um Weihnachten sogar ein **neues Allzeithoch**.\n- Die Erwartungen an Entwicklungen und Einsatz von **künstlicher Intelligenz waren der bestimmende Faktor** für die Bewegungen an den Aktienmärkten. Der führende Chiphersteller Nvidia beispielsweise, die am höchsten gewichtete Aktie im US-Index S&P 500, legte 2025 um +22,5 % (in US-Dollar: +38,9 %) zu. Der Titel war damit allein für 1,7 Prozentpunkte der Rendite von insgesamt +3,8 % bei US-Aktien verantwortlich. Zerlegt man den weltweiten Aktienmarkt in Sektoren, lagen Technologiewerte – wie Nvidia – allerdings nicht an der Spitze. Am stärksten entwickelten sich die Kurse im **Sektor Kommunikation**. Diesen dominiert die Aktie von Alphabet (Kursentwicklung 2025: +46,4 % in Euro, +66 % in US-Dollar). Das Unternehmen spielt neben seinen Geschäften rund um die Google-Suche und Cloud-Dienste über sein Sprachmodell Gemini ebenfalls im KI-Wettlauf mit. Das Beispiel zeigt, dass künstliche Intelligenz über den IT-Sektor im engeren Sinne hinaus eine gewichtige Rolle spielt.",
+    analysisSections: initialMarketAnalysisSections,
   },
+  wertentwicklungPage: {
+    title: "Wertentwicklung",
+    subtitle: "Wertentwicklung unterschiedlicher Anlageklassen 2025",
+    chartData: initialWertentwicklungChartData,
+    chartDataCsv: initialWertentwicklungChartCsv,
+    footnote:
+      "Angaben in Euro vor Kosten. Anleihen in Fremdwährung sind währungsbesichert.",
+    analysisSections: initialMarketAnalysisSections,
+  },
+  page7: {
+    title: "Seite 7",
+    body: "",
+  },
+  page8: {
+    title: "Seite 8",
+    body: "",
+    secondaryTitle: "",
+    secondaryBody: "",
+  },
+};
+
+const STORAGE_KEY = "pdf-generator:formData";
+
+const mergeWithDefaults = (stored) => {
+  if (!stored || typeof stored !== "object") return initialData;
+  return {
+    ...initialData,
+    ...stored,
+    sections: { ...initialData.sections, ...(stored.sections || {}) },
+    secondPage: { ...initialData.secondPage, ...(stored.secondPage || {}) },
+    marketPage: { ...initialData.marketPage, ...(stored.marketPage || {}) },
+    wertentwicklungPage: {
+      ...initialData.wertentwicklungPage,
+      ...(stored.wertentwicklungPage || {}),
+    },
+    page7: { ...initialData.page7, ...(stored.page7 || {}) },
+    page8: { ...initialData.page8, ...(stored.page8 || {}) },
+    portfolioPerformance:
+      stored.portfolioPerformance ?? initialData.portfolioPerformance,
+  };
+};
+
+const loadInitialData = () => {
+  if (typeof window === "undefined") return initialData;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return initialData;
+    const parsed = JSON.parse(raw);
+    return mergeWithDefaults(parsed);
+  } catch (error) {
+    console.warn("Failed to load saved form data", error);
+    return initialData;
+  }
 };
 
 const parseMarketChartValue = (value) => {
@@ -146,17 +216,31 @@ async function captureSvgAsPng(svgElement, scale = 3) {
 }
 
 export default function App() {
-  const [formData, setFormData] = useState(initialData);
-  const [generatedData, setGeneratedData] = useState(initialData);
+  const [formData, setFormData] = useState(loadInitialData);
+  const [generatedData, setGeneratedData] = useState(loadInitialData);
   const [generatedMarketChartImage, setGeneratedMarketChartImage] = useState(null);
+  const [generatedWertentwicklungChartImage, setGeneratedWertentwicklungChartImage] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [chartCaptureRows, setChartCaptureRows] = useState(() =>
-    buildMarketChartRows(initialData.marketPage?.chartData || [])
+    buildMarketChartRows(loadInitialData().marketPage?.chartData || [])
   );
   const chartCaptureRootRef = useRef(null);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+    } catch (error) {
+      console.warn("Failed to save form data", error);
+    }
+  }, [formData]);
+
   const generatedMarketChartRows = useMemo(
     () => buildMarketChartRows(generatedData.marketPage?.chartData || []),
+    [generatedData]
+  );
+  const generatedWertentwicklungChartRows = useMemo(
+    () => buildMarketChartRows(generatedData.wertentwicklungPage?.chartData || []),
     [generatedData]
   );
 
@@ -183,9 +267,11 @@ export default function App() {
     let isCancelled = false;
     const seedInitialChartImage = async () => {
       try {
-        const chartImage = await captureMarketChartImage(generatedMarketChartRows);
-        if (!isCancelled && chartImage) {
-          setGeneratedMarketChartImage(chartImage);
+        const marketImage = await captureMarketChartImage(generatedMarketChartRows);
+        const wertImage = await captureMarketChartImage(generatedWertentwicklungChartRows);
+        if (!isCancelled) {
+          if (marketImage) setGeneratedMarketChartImage(marketImage);
+          if (wertImage) setGeneratedWertentwicklungChartImage(wertImage);
         }
       } catch (error) {
         console.error("Failed to seed initial market chart image", error);
@@ -196,7 +282,7 @@ export default function App() {
     return () => {
       isCancelled = true;
     };
-  }, [generatedMarketChartRows]);
+  }, [generatedMarketChartRows, generatedWertentwicklungChartRows]);
 
   const handleGenerate = async () => {
     if (isGenerating) return;
@@ -206,16 +292,25 @@ export default function App() {
     const nextChartRows = buildMarketChartRows(
       nextGeneratedData.marketPage?.chartData || []
     );
+    const nextWertChartRows = buildMarketChartRows(
+      nextGeneratedData.wertentwicklungPage?.chartData || []
+    );
 
     let chartImage = null;
+    let wertChartImage = null;
     try {
       chartImage = await captureMarketChartImage(nextChartRows);
+      wertChartImage = await captureMarketChartImage(nextWertChartRows);
     } catch (error) {
       console.error("Failed to capture market chart image", error);
     } finally {
       setGeneratedMarketChartImage((previousImage) => {
         if (nextChartRows.length === 0) return null;
         return chartImage || previousImage;
+      });
+      setGeneratedWertentwicklungChartImage((previousImage) => {
+        if (nextWertChartRows.length === 0) return null;
+        return wertChartImage || previousImage;
       });
       setGeneratedData(nextGeneratedData);
       setIsGenerating(false);
@@ -227,6 +322,7 @@ export default function App() {
       <PdfDocument
         formData={generatedData}
         marketChartImageSrc={generatedMarketChartImage}
+        wertentwicklungChartImageSrc={generatedWertentwicklungChartImage}
       />
     ),
     [generatedData, generatedMarketChartImage]

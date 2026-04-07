@@ -197,6 +197,102 @@ export default function EditorSidebar({
     }));
   };
 
+  const updateMarketAnalysisSection = (index, key, value) => {
+    setFormData((prev) => {
+      const sections = [...(prev.marketPage?.analysisSections || [])];
+      sections[index] = { ...sections[index], [key]: value };
+      return {
+        ...prev,
+        marketPage: { ...prev.marketPage, analysisSections: sections },
+      };
+    });
+  };
+
+  const addMarketAnalysisSection = () => {
+    setFormData((prev) => ({
+      ...prev,
+      marketPage: {
+        ...prev.marketPage,
+        analysisSections: [
+          ...(prev.marketPage?.analysisSections || []),
+          { title: "", content: "" },
+        ],
+      },
+    }));
+  };
+
+  const removeMarketAnalysisSection = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      marketPage: {
+        ...prev.marketPage,
+        analysisSections: (prev.marketPage?.analysisSections || []).filter(
+          (_, i) => i !== index
+        ),
+      },
+    }));
+  };
+
+  const updateWertentwicklungPage = (key, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      wertentwicklungPage: { ...prev.wertentwicklungPage, [key]: value },
+    }));
+  };
+
+  const updatePage7 = (key, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      page7: { ...prev.page7, [key]: value },
+    }));
+  };
+
+  const updatePage8 = (key, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      page8: { ...prev.page8, [key]: value },
+    }));
+  };
+
+  const updateWertentwicklungAnalysisSection = (index, key, value) => {
+    setFormData((prev) => {
+      const sections = [...(prev.wertentwicklungPage?.analysisSections || [])];
+      sections[index] = { ...sections[index], [key]: value };
+      return {
+        ...prev,
+        wertentwicklungPage: {
+          ...prev.wertentwicklungPage,
+          analysisSections: sections,
+        },
+      };
+    });
+  };
+
+  const addWertentwicklungAnalysisSection = () => {
+    setFormData((prev) => ({
+      ...prev,
+      wertentwicklungPage: {
+        ...prev.wertentwicklungPage,
+        analysisSections: [
+          ...(prev.wertentwicklungPage?.analysisSections || []),
+          { title: "", content: "" },
+        ],
+      },
+    }));
+  };
+
+  const removeWertentwicklungAnalysisSection = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      wertentwicklungPage: {
+        ...prev.wertentwicklungPage,
+        analysisSections: (prev.wertentwicklungPage?.analysisSections || []).filter(
+          (_, i) => i !== index
+        ),
+      },
+    }));
+  };
+
   const updateMarketChartRow = (index, key, value) => {
     setFormData((prev) => {
       const chartData = [...(prev.marketPage?.chartData || [])];
@@ -205,6 +301,21 @@ export default function EditorSidebar({
         ...prev,
         marketPage: {
           ...prev.marketPage,
+          chartData,
+          chartDataCsv: buildChartDataCsv(chartData),
+        },
+      };
+    });
+  };
+
+  const updateWertentwicklungChartRow = (index, key, value) => {
+    setFormData((prev) => {
+      const chartData = [...(prev.wertentwicklungPage?.chartData || [])];
+      chartData[index] = { ...chartData[index], [key]: value };
+      return {
+        ...prev,
+        wertentwicklungPage: {
+          ...prev.wertentwicklungPage,
           chartData,
           chartDataCsv: buildChartDataCsv(chartData),
         },
@@ -229,6 +340,23 @@ export default function EditorSidebar({
     });
   };
 
+  const addWertentwicklungChartRow = () => {
+    setFormData((prev) => {
+      const chartData = [
+        ...(prev.wertentwicklungPage?.chartData || []),
+        { label: "", value: "" },
+      ];
+      return {
+        ...prev,
+        wertentwicklungPage: {
+          ...prev.wertentwicklungPage,
+          chartData,
+          chartDataCsv: buildChartDataCsv(chartData),
+        },
+      };
+    });
+  };
+
   const removeMarketChartRow = (index) => {
     setFormData((prev) => {
       const chartData = (prev.marketPage?.chartData || []).filter(
@@ -238,6 +366,22 @@ export default function EditorSidebar({
         ...prev,
         marketPage: {
           ...prev.marketPage,
+          chartData,
+          chartDataCsv: buildChartDataCsv(chartData),
+        },
+      };
+    });
+  };
+
+  const removeWertentwicklungChartRow = (index) => {
+    setFormData((prev) => {
+      const chartData = (prev.wertentwicklungPage?.chartData || []).filter(
+        (_, i) => i !== index
+      );
+      return {
+        ...prev,
+        wertentwicklungPage: {
+          ...prev.wertentwicklungPage,
           chartData,
           chartDataCsv: buildChartDataCsv(chartData),
         },
@@ -427,6 +571,14 @@ export default function EditorSidebar({
           </button>
         </div>
         <InlineTextField
+          label="Page Title"
+          rows={2}
+          value={formData.secondPage?.title || ""}
+          onChange={(value) => updateSecondPage("title", value)}
+          placeholder="Add **bold** or *italic* text..."
+          showHelp={false}
+        />
+        <InlineTextField
           label="Summary"
           rows={4}
           value={formData.secondPage?.summary || ""}
@@ -540,20 +692,173 @@ export default function EditorSidebar({
             onChange={(e) => updateMarketPage("footnote", e.target.value)}
           />
         </label>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-[#1c1c1c]">Analysis Sections</h3>
+          <button
+            type="button"
+            onClick={addMarketAnalysisSection}
+            className="rounded-xl bg-scalable-200 px-3 py-2 text-xs font-semibold text-[#1c1c1c]"
+          >
+            Add Section
+          </button>
+        </div>
+        {(formData.marketPage?.analysisSections || []).map((section, index) => (
+          <div
+            key={`market-analysis-${index}`}
+            className="flex flex-col gap-3 rounded-2xl border border-[#efece7] bg-[#fbfaf8] p-4"
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#6a6a6a]">
+                Analysis {index + 1}
+              </p>
+              <button
+                type="button"
+                onClick={() => removeMarketAnalysisSection(index)}
+                className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-[#6a6a6a]"
+              >
+                Remove
+              </button>
+            </div>
+            <InlineTextField
+              label="Analysis Title"
+              rows={2}
+              value={section.title || ""}
+              onChange={(value) =>
+                updateMarketAnalysisSection(index, "title", value)
+              }
+              placeholder="Add **bold** or *italic* text..."
+              showHelp={false}
+            />
+            <RichTextField
+              label="Analysis Content"
+              value={section.content || ""}
+              onChange={(value) =>
+                updateMarketAnalysisSection(index, "content", value)
+              }
+              placeholder="Use bullets (-), headings (##), bold (**), italic (*)..."
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-2xl border border-[#e7e2db] bg-white p-4 shadow-card">
+        <h2 className="text-base font-semibold text-[#1c1c1c]">Wertentwicklung</h2>
         <InlineTextField
-          label="Analysis Title"
+          label="Title"
           rows={2}
-          value={formData.marketPage?.analysisTitle || ""}
-          onChange={(value) => updateMarketPage("analysisTitle", value)}
+          value={formData.wertentwicklungPage?.title || ""}
+          onChange={(value) => updateWertentwicklungPage("title", value)}
           placeholder="Add **bold** or *italic* text..."
           showHelp={false}
         />
-        <RichTextField
-          label="Market Analysis"
-          value={formData.marketPage?.analysisBody || ""}
-          onChange={(value) => updateMarketPage("analysisBody", value)}
-          placeholder="Use bullets (-), headings (##), bold (**), italic (*)..."
+        <InlineTextField
+          label="Subtitle"
+          rows={2}
+          value={formData.wertentwicklungPage?.subtitle || ""}
+          onChange={(value) => updateWertentwicklungPage("subtitle", value)}
+          placeholder="Add **bold** or *italic* text..."
+          showHelp={false}
         />
+        <div className="flex flex-col gap-3 rounded-2xl border border-[#efece7] bg-[#fbfaf8] p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-[#1c1c1c]">Chart Data</h3>
+            <button
+              type="button"
+              onClick={addWertentwicklungChartRow}
+              className="rounded-xl bg-scalable-200 px-3 py-2 text-xs font-semibold text-[#1c1c1c]"
+            >
+              Add Row
+            </button>
+          </div>
+          {(formData.wertentwicklungPage?.chartData || []).map((row, index) => (
+            <div
+              className="grid grid-cols-[1.4fr_0.6fr_auto] items-center gap-2"
+              key={`wert-chart-${index}`}
+            >
+              <input
+                type="text"
+                placeholder="Label"
+                value={row.label}
+                className="rounded-xl border border-[#d6d2cc] bg-white px-3 py-2 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200"
+                onChange={(e) =>
+                  updateWertentwicklungChartRow(index, "label", e.target.value)
+                }
+              />
+              <input
+                type="text"
+                placeholder="Value"
+                value={row.value}
+                className="rounded-xl border border-[#d6d2cc] bg-white px-3 py-2 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200"
+                onChange={(e) =>
+                  updateWertentwicklungChartRow(index, "value", e.target.value)
+                }
+              />
+              <button
+                type="button"
+                onClick={() => removeWertentwicklungChartRow(index)}
+                className="rounded-xl bg-[#f7f5f2] px-3 py-2 text-xs font-semibold text-[#6a6a6a]"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.14em] text-[#6a6a6a]">
+          Footnote
+          <textarea
+            rows={2}
+            className="rounded-xl border border-[#d6d2cc] bg-white px-3 py-2 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200"
+            value={formData.wertentwicklungPage?.footnote || ""}
+            onChange={(e) => updateWertentwicklungPage("footnote", e.target.value)}
+          />
+        </label>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-[#1c1c1c]">Analysis Sections</h3>
+          <button
+            type="button"
+            onClick={addWertentwicklungAnalysisSection}
+            className="rounded-xl bg-scalable-200 px-3 py-2 text-xs font-semibold text-[#1c1c1c]"
+          >
+            Add Section
+          </button>
+        </div>
+        {(formData.wertentwicklungPage?.analysisSections || []).map((section, index) => (
+          <div
+            key={`wert-analysis-${index}`}
+            className="flex flex-col gap-3 rounded-2xl border border-[#efece7] bg-[#fbfaf8] p-4"
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#6a6a6a]">
+                Analysis {index + 1}
+              </p>
+              <button
+                type="button"
+                onClick={() => removeWertentwicklungAnalysisSection(index)}
+                className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-[#6a6a6a]"
+              >
+                Remove
+              </button>
+            </div>
+            <InlineTextField
+              label="Analysis Title"
+              rows={2}
+              value={section.title || ""}
+              onChange={(value) =>
+                updateWertentwicklungAnalysisSection(index, "title", value)
+              }
+              placeholder="Add **bold** or *italic* text..."
+              showHelp={false}
+            />
+            <RichTextField
+              label="Analysis Content"
+              value={section.content || ""}
+              onChange={(value) =>
+                updateWertentwicklungAnalysisSection(index, "content", value)
+              }
+              placeholder="Use bullets (-), headings (##), bold (**), italic (*)..."
+            />
+          </div>
+        ))}
       </div>
 
       <div className="flex flex-col gap-3 rounded-2xl border border-[#e7e2db] bg-white p-4 shadow-card">
@@ -601,6 +906,56 @@ export default function EditorSidebar({
             </button>
           </div>
         ))}
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-2xl border border-[#e7e2db] bg-white p-4 shadow-card">
+        <h2 className="text-base font-semibold text-[#1c1c1c]">Page 7</h2>
+        <InlineTextField
+          label="Title"
+          rows={2}
+          value={formData.page7?.title || ""}
+          onChange={(value) => updatePage7("title", value)}
+          placeholder="Add **bold** or *italic* text..."
+          showHelp={false}
+        />
+        <RichTextField
+          label="Content"
+          value={formData.page7?.body || ""}
+          onChange={(value) => updatePage7("body", value)}
+          placeholder="Use bullets (-), headings (##), bold (**), italic (*)..."
+        />
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-2xl border border-[#e7e2db] bg-white p-4 shadow-card">
+        <h2 className="text-base font-semibold text-[#1c1c1c]">Page 8</h2>
+        <InlineTextField
+          label="Title"
+          rows={2}
+          value={formData.page8?.title || ""}
+          onChange={(value) => updatePage8("title", value)}
+          placeholder="Add **bold** or *italic* text..."
+          showHelp={false}
+        />
+        <RichTextField
+          label="Content"
+          value={formData.page8?.body || ""}
+          onChange={(value) => updatePage8("body", value)}
+          placeholder="Use bullets (-), headings (##), bold (**), italic (*)..."
+        />
+        <InlineTextField
+          label="Second Title"
+          rows={2}
+          value={formData.page8?.secondaryTitle || ""}
+          onChange={(value) => updatePage8("secondaryTitle", value)}
+          placeholder="Add **bold** or *italic* text..."
+          showHelp={false}
+        />
+        <RichTextField
+          label="Second Content"
+          value={formData.page8?.secondaryBody || ""}
+          onChange={(value) => updatePage8("secondaryBody", value)}
+          placeholder="Use bullets (-), headings (##), bold (**), italic (*)..."
+        />
       </div>
     </div>
   );

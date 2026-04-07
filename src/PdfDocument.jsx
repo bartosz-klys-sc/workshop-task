@@ -46,23 +46,49 @@ const defaultMarketPage = {
   subtitle: "Wertentwicklung unterschiedlicher Anlageklassen 2025",
   footnote:
     "Angaben in Euro vor Kosten. Anleihen in Fremdwährung sind währungsbesichert.",
-  analysisTitle: "Aktien",
-  analysisBody:
-    "- 2025 war im historischen Vergleich ein **starkes Jahr für Aktien**: Europäische Titel legten um +20,2 % zu, Schwellenländeraktien um +16 %, die Kurse chinesischer Papiere (A-Aktien) stiegen um +14 %. Das Plus von +3,8 % bei US-Aktien sieht im Vergleich bescheiden aus. Tatsächlich lagen sie so deutlich wie seit 15 Jahren nicht mehr hinter einem globalen Aktienindex ohne US-Titel – etwa dem MSCI ACWI ex USA – zurück. Aus Sicht hiesiger Anlegender spielt ein weiterer Faktor eine gewichtige Rolle: der **Wertverlust des US-Dollar gegenüber dem Euro von -11,9 %**. Dadurch fällt die Rendite für in Euro geführte Depots geringer aus. In ihrer Heimatwährung legten US-Aktien um +17,8 % zu.\n- Zweimal gaben die Kurse im Verlauf des Jahres deutlich nach: Am stärksten brachen sie Anfang April ein, als US-Präsident Donald Trump umfassende Zölle ankündigte. US-Aktien beispielsweise verloren in diesem Zeitraum gegenüber ihrem Hoch im März um bis zu -22,4 % (Maximum Drawdown). Im vierten Quartal gab es eine weitere Phase der Nervosität, als **Warnungen vor einer KI-Blase** an den Aktienmärkten immer lauter wurden. Erneut sanken die Kurse etwa von US-Titeln, allerdings weniger als rund um den sogenannten „Liberation Day“. Zum Jahresende hin hellte sich die Stimmung wieder auf. Der amerikanische Aktienmarkt (S&P 500) verzeichnete um Weihnachten sogar ein **neues Allzeithoch**.\n- Die Erwartungen an Entwicklungen und Einsatz von **künstlicher Intelligenz waren der bestimmende Faktor** für die Bewegungen an den Aktienmärkten. Der führende Chiphersteller Nvidia beispielsweise, die am höchsten gewichtete Aktie im US-Index S&P 500, legte 2025 um +22,5 % (in US-Dollar: +38,9 %) zu. Der Titel war damit allein für 1,7 Prozentpunkte der Rendite von insgesamt +3,8 % bei US-Aktien verantwortlich. Zerlegt man den weltweiten Aktienmarkt in Sektoren, lagen Technologiewerte – wie Nvidia – allerdings nicht an der Spitze. Am stärksten entwickelten sich die Kurse im **Sektor Kommunikation**. Diesen dominiert die Aktie von Alphabet (Kursentwicklung 2025: +46,4 % in Euro, +66 % in US-Dollar). Das Unternehmen spielt neben seinen Geschäften rund um die Google-Suche und Cloud-Dienste über sein Sprachmodell Gemini ebenfalls im KI-Wettlauf mit. Das Beispiel zeigt, dass künstliche Intelligenz über den IT-Sektor im engeren Sinne hinaus eine gewichtige Rolle spielt.",
+  analysisSections: [],
 };
 
-export default function PdfDocument({ formData, marketChartImageSrc }) {
+export default function PdfDocument({
+  formData,
+  marketChartImageSrc,
+  wertentwicklungChartImageSrc,
+}) {
   const t = dictionary[formData.language] || dictionary.de;
   const brandColor = formData.brand === "ING" ? "#FF6200" : "#FF7A00";
   const title = formData.brand === "ING" ? "Smart Invest" : formData.reportType;
-  const showAmbassador = formData.brand === "Scalable";
   const metaDate = formData.reportDate?.trim() || `${formData.quarter} ${formData.year}`;
   const marketPage = { ...defaultMarketPage, ...(formData.marketPage || {}) };
+  const wertentwicklungPage = {
+    ...defaultMarketPage,
+    title: "Wertentwicklung",
+    ...(formData.wertentwicklungPage || {}),
+  };
   const secondPage = {
+    title: "In Kürze",
     summary: "",
     sections: [],
     ...(formData.secondPage || {}),
   };
+  const page7 = {
+    title: "Seite 7",
+    body: "",
+    ...(formData.page7 || {}),
+  };
+  const page8 = {
+    title: "Seite 8",
+    body: "",
+    secondaryTitle: "",
+    secondaryBody: "",
+    ...(formData.page8 || {}),
+  };
+  const hasPage7Content =
+    (page7.title || "").trim().length > 0 || (page7.body || "").trim().length > 0;
+  const hasPage8Content =
+    (page8.title || "").trim().length > 0 ||
+    (page8.body || "").trim().length > 0 ||
+    (page8.secondaryTitle || "").trim().length > 0 ||
+    (page8.secondaryBody || "").trim().length > 0;
 
   const parseInlineSegments = (text) => {
     const parts = [];
@@ -143,7 +169,7 @@ export default function PdfDocument({ formData, marketChartImageSrc }) {
       }
       if (line.startsWith("- ")) {
         return (
-          <View style={styles.bulletRow} key={`line-${idx}`}>
+          <View style={styles.bulletRow} key={`line-${idx}`} wrap={false}>
             <Text style={isMarket ? styles.marketBulletMarker : styles.bulletMarker}>•</Text>
             {renderInlineText(
               line.replace("- ", ""),
@@ -195,6 +221,14 @@ export default function PdfDocument({ formData, marketChartImageSrc }) {
 
   const [leftSections, rightSections] = splitSections(secondPage.sections || []);
 
+  const renderPageNumber = (style) => (
+    <Text
+      style={style}
+      fixed
+      render={({ pageNumber, totalPages }) => `${t.page} ${pageNumber} / ${totalPages}`}
+    />
+  );
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -222,9 +256,7 @@ export default function PdfDocument({ formData, marketChartImageSrc }) {
           </View>
         </View>
 
-        <Text style={styles.pageNumber}>
-          {t.page} 1 / 4
-        </Text>
+        {renderPageNumber(styles.pageNumber)}
       </Page>
 
       <Page size="A4" style={styles.secondPage}>
@@ -323,6 +355,11 @@ export default function PdfDocument({ formData, marketChartImageSrc }) {
             </Svg>
           </View>
 
+          {renderInlineText(
+            secondPage.title || "",
+            styles.secondPageTitle,
+            "second-page-title"
+          )}
           <View style={styles.secondPageSummary}>
             {renderSecondPageSummary(secondPage.summary || "")}
           </View>
@@ -356,55 +393,7 @@ export default function PdfDocument({ formData, marketChartImageSrc }) {
           </View>
         </View>
 
-        <Text style={styles.pageNumberDark}>
-          {t.page} 2 / 4
-        </Text>
-      </Page>
-
-      <Page size="A4" style={styles.page}>
-        {renderInlineText(
-          t.performance,
-          [styles.title, { color: brandColor }],
-          "performance-title"
-        )}
-
-        <View style={styles.table}>
-          <View style={styles.tableRowHeader}>
-            <Text style={styles.tableHeaderCell}>{t.portfolio}</Text>
-            <Text style={styles.tableHeaderCell}>{t.ytd}</Text>
-          </View>
-          {formData.portfolioPerformance.map((row, index) => (
-            <View style={styles.tableRow} key={`row-${index}`}>
-              <Text style={styles.tableCell}>{row.portfolio}</Text>
-              <Text style={styles.tableCell}>{row.ytd.toFixed(1)}%</Text>
-            </View>
-          ))}
-        </View>
-
-        {showAmbassador ? (
-          <View style={styles.ambassadorBlock}>
-            <Image
-              style={styles.ambassadorImage}
-              src="https://via.placeholder.com/200x260.png?text=Christian"
-            />
-            <Text style={styles.ambassadorCaption}>Christian</Text>
-          </View>
-        ) : null}
-
-        <View style={styles.legalBlock}>
-          <Text style={styles.legalTitle}>{t.legal}</Text>
-          <Text style={styles.legalBody}>{t.legalBody}</Text>
-        </View>
-
-        <Text style={styles.footerDisclaimer}>
-          {formData.brand === "ING"
-            ? "Die Wertentwicklungen finden Sie auf der Rendite-Seite bei der ING."
-            : "Die Wertentwicklungen finden Sie auf unserer Rendite-Seite."}
-        </Text>
-
-        <Text style={styles.pageNumber}>
-          {t.page} 3 / 4
-        </Text>
+        {renderPageNumber(styles.pageNumberDark)}
       </Page>
 
       <Page size="A4" style={[styles.page, styles.marketPage]}>
@@ -424,20 +413,88 @@ export default function PdfDocument({ formData, marketChartImageSrc }) {
         <Text style={styles.marketFootnote}>{marketPage.footnote}</Text>
 
         <View style={styles.marketAnalysisSection}>
-          {renderInlineText(
-            marketPage.analysisTitle,
-            styles.marketSectionLabel,
-            "market-analysis-title"
-          )}
-          <View style={styles.richBlock}>
-            {renderRichText(marketPage.analysisBody, "market")}
-          </View>
+          {(marketPage.analysisSections || []).map((section, index) => (
+            <View style={styles.marketAnalysisBlock} key={`market-left-${index}`}>
+              {renderInlineText(
+                section.title || "",
+                styles.marketSectionLabel,
+                `market-analysis-title-${index}`
+              )}
+              <View style={styles.richBlock}>
+                {renderRichText(section.content || "", "market")}
+              </View>
+            </View>
+          ))}
         </View>
 
-        <Text style={[styles.pageNumber, styles.marketPageNumber]}>
-          {t.page} 4 / 4
-        </Text>
+        {renderPageNumber([styles.pageNumber, styles.marketPageNumber])}
       </Page>
+
+      <Page size="A4" style={[styles.page, styles.marketPage]}>
+        {renderInlineText(
+          wertentwicklungPage.title,
+          styles.marketTitle,
+          "wertentwicklung-title"
+        )}
+        {renderInlineText(
+          wertentwicklungPage.subtitle,
+          styles.marketSubtitle,
+          "wertentwicklung-subtitle"
+        )}
+
+        {wertentwicklungChartImageSrc ? (
+          <Image style={styles.marketChartImage} src={wertentwicklungChartImageSrc} />
+        ) : (
+          <Text style={styles.marketChartFallback}>Chart preview unavailable.</Text>
+        )}
+
+        <Text style={styles.marketFootnote}>{wertentwicklungPage.footnote}</Text>
+
+        <View style={styles.marketAnalysisSection}>
+          {(wertentwicklungPage.analysisSections || []).map((section, index) => (
+            <View style={styles.marketAnalysisBlock} key={`wert-left-${index}`}>
+              {renderInlineText(
+                section.title || "",
+                styles.marketSectionLabel,
+                `wert-analysis-title-${index}`
+              )}
+              <View style={styles.richBlock}>
+                {renderRichText(section.content || "", "market")}
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {renderPageNumber([styles.pageNumber, styles.marketPageNumber])}
+      </Page>
+
+      {hasPage7Content ? (
+        <Page size="A4" style={styles.page}>
+          {renderInlineText(page7.title, styles.marketTitle, "page7-title")}
+          <View style={styles.richBlock}>
+            {renderRichText(page7.body || "")}
+          </View>
+          {renderPageNumber(styles.pageNumber)}
+        </Page>
+      ) : null}
+
+      {hasPage8Content ? (
+        <Page size="A4" style={styles.page}>
+          {renderInlineText(page8.title, styles.marketTitle, "page8-title")}
+          <View style={styles.richBlock}>
+            {renderRichText(page8.body || "")}
+          </View>
+          {renderInlineText(
+            page8.secondaryTitle,
+            styles.marketTitle,
+            "page8-title-2"
+          )}
+          <View style={styles.richBlock}>
+            {renderRichText(page8.secondaryBody || "")}
+          </View>
+          {renderPageNumber(styles.pageNumber)}
+        </Page>
+      ) : null}
     </Document>
   );
 }
@@ -486,6 +543,11 @@ const styles = StyleSheet.create({
   secondPageSummary: {
     marginBottom: 30,
     maxWidth: 440,
+  },
+  secondPageTitle: {
+    fontSize: 22,
+    fontWeight: 700,
+    marginBottom: 14,
   },
   secondPageSummaryText: {
     fontSize: 16,
@@ -659,71 +721,9 @@ const styles = StyleSheet.create({
     marginTop: 14,
     gap: 2,
   },
-  table: {
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    marginTop: 8,
-  },
-  tableRowHeader: {
-    flexDirection: "row",
-    backgroundColor: "#F3F4F6",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-  tableRow: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-  tableHeaderCell: {
-    flex: 1,
-    fontSize: 11,
-    fontWeight: 700,
-    padding: 8,
-  },
-  tableCell: {
-    flex: 1,
-    fontSize: 11,
-    padding: 8,
-  },
-  ambassadorBlock: {
-    marginTop: 18,
-    alignItems: "flex-start",
-  },
-  ambassadorImage: {
-    width: 180,
-    height: 230,
-    borderRadius: 8,
-  },
-  ambassadorCaption: {
-    fontSize: 10,
-    marginTop: 6,
-    color: "#6B7280",
-  },
-  legalBlock: {
-    marginTop: 16,
-    padding: 10,
-    backgroundColor: "#F9FAFB",
-    borderRadius: 6,
-  },
-  legalTitle: {
-    fontSize: 10,
-    fontWeight: 700,
-    marginBottom: 4,
-  },
-  legalBody: {
-    fontSize: 9,
-    lineHeight: 1.4,
-    color: "#4B5563",
-  },
-  footerDisclaimer: {
-    position: "absolute",
-    bottom: 38,
-    left: 40,
-    right: 40,
-    fontSize: 8,
-    color: "#6B7280",
-    textAlign: "center",
+  marketAnalysisBlock: {
+    gap: 2,
+    marginBottom: 6,
   },
   pageNumber: {
     position: "absolute",
