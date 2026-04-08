@@ -551,21 +551,6 @@ export default function EditorSidebar({
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 rounded-2xl border border-[#e7e2db] bg-white p-4 shadow-card">
-        <RichTextField
-          label="In Kürze"
-          value={formData.sections.inKuerze}
-          onChange={(value) => updateSection("inKuerze", value)}
-          placeholder="Write a short market summary..."
-        />
-        <RichTextField
-          label="Ausblick"
-          value={formData.sections.ausblick}
-          onChange={(value) => updateSection("ausblick", value)}
-          placeholder="Describe the outlook and key risks..."
-        />
-      </div>
-
       <div className="flex flex-col gap-3 rounded-2xl border border-[#e7e2db] bg-white p-4 shadow-card">
         <h2 className="text-base font-semibold text-[#1c1c1c]">Cover Page</h2>
         <InlineTextField

@@ -47,10 +47,6 @@ const initialData = {
     subtitle: "Jahresrückblick 2025",
     heroImageUrl: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=80",
   },
-  sections: {
-    inKuerze: "2025 war ein starkes Aktienjahr...",
-    ausblick: "Eine neue Ära mit massiven staatlichen Eingriffen...",
-  },
   secondPage: {
     title: "In Kürze",
     summary:
@@ -125,7 +121,6 @@ const mergeWithDefaults = (stored) => {
   return {
     ...initialData,
     ...stored,
-    sections: { ...initialData.sections, ...(stored.sections || {}) },
     secondPage: { ...initialData.secondPage, ...(stored.secondPage || {}) },
     marketPage: {
       ...initialData.marketPage,
