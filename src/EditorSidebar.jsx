@@ -215,7 +215,7 @@ export default function EditorSidebar({
         ...prev.marketPage,
         analysisSections: [
           ...(prev.marketPage?.analysisSections || []),
-          { title: "", content: "" },
+          { title: "", content: "", useSubheading: false },
         ],
       },
     }));
@@ -254,6 +254,13 @@ export default function EditorSidebar({
     }));
   };
 
+  const updateCoverPage = (key, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      coverPage: { ...prev.coverPage, [key]: value },
+    }));
+  };
+
   const updateWertentwicklungAnalysisSection = (index, key, value) => {
     setFormData((prev) => {
       const sections = [...(prev.wertentwicklungPage?.analysisSections || [])];
@@ -275,7 +282,7 @@ export default function EditorSidebar({
         ...prev.wertentwicklungPage,
         analysisSections: [
           ...(prev.wertentwicklungPage?.analysisSections || []),
-          { title: "", content: "" },
+          { title: "", content: "", useSubheading: false },
         ],
       },
     }));
@@ -559,6 +566,44 @@ export default function EditorSidebar({
         />
       </div>
 
+      <div className="flex flex-col gap-3 rounded-2xl border border-[#e7e2db] bg-white p-4 shadow-card">
+        <h2 className="text-base font-semibold text-[#1c1c1c]">Cover Page</h2>
+        <InlineTextField
+          label="Metadata"
+          rows={2}
+          value={formData.coverPage?.metadataText || ""}
+          onChange={(value) => updateCoverPage("metadataText", value)}
+          placeholder="ALL CAPS METADATA"
+          showHelp={false}
+        />
+        <InlineTextField
+          label="Main Title"
+          rows={2}
+          value={formData.coverPage?.mainTitle || ""}
+          onChange={(value) => updateCoverPage("mainTitle", value)}
+          placeholder="Main title"
+          showHelp={false}
+        />
+        <InlineTextField
+          label="Subtitle"
+          rows={2}
+          value={formData.coverPage?.subtitle || ""}
+          onChange={(value) => updateCoverPage("subtitle", value)}
+          placeholder="Subtitle"
+          showHelp={false}
+        />
+        <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.14em] text-[#6a6a6a]">
+          Hero Image URL
+          <input
+            className="rounded-xl border border-[#d6d2cc] bg-white px-3 py-2 text-sm text-[#1c1c1c] focus:border-scalable-500 focus:outline-none focus:ring-2 focus:ring-scalable-200"
+            type="text"
+            value={formData.coverPage?.heroImageUrl || ""}
+            onChange={(e) => updateCoverPage("heroImageUrl", e.target.value)}
+            placeholder="https://..."
+          />
+        </label>
+      </div>
+
       <div className="flex flex-col gap-4 rounded-2xl border border-[#e7e2db] bg-white p-4 shadow-card">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold text-[#1c1c1c]">Second Page</h2>
@@ -729,6 +774,23 @@ export default function EditorSidebar({
               placeholder="Add **bold** or *italic* text..."
               showHelp={false}
             />
+            <button
+              type="button"
+              onClick={() =>
+                updateMarketAnalysisSection(
+                  index,
+                  "useSubheading",
+                  !section.useSubheading
+                )
+              }
+              className={`rounded-xl px-3 py-2 text-xs font-semibold ${
+                section.useSubheading
+                  ? "bg-scalable-500 text-white"
+                  : "bg-[#f7f5f2] text-[#6a6a6a]"
+              }`}
+            >
+              {section.useSubheading ? "Subheading On" : "Subheading Off"}
+            </button>
             <RichTextField
               label="Analysis Content"
               value={section.content || ""}
@@ -812,6 +874,14 @@ export default function EditorSidebar({
             onChange={(e) => updateWertentwicklungPage("footnote", e.target.value)}
           />
         </label>
+        <InlineTextField
+          label="Subtitle (after footnote)"
+          rows={2}
+          value={formData.wertentwicklungPage?.subtitleAfterFootnote || ""}
+          onChange={(value) => updateWertentwicklungPage("subtitleAfterFootnote", value)}
+          placeholder="Add **bold** or *italic* text..."
+          showHelp={false}
+        />
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-[#1c1c1c]">Analysis Sections</h3>
           <button
@@ -849,6 +919,23 @@ export default function EditorSidebar({
               placeholder="Add **bold** or *italic* text..."
               showHelp={false}
             />
+            <button
+              type="button"
+              onClick={() =>
+                updateWertentwicklungAnalysisSection(
+                  index,
+                  "useSubheading",
+                  !section.useSubheading
+                )
+              }
+              className={`rounded-xl px-3 py-2 text-xs font-semibold ${
+                section.useSubheading
+                  ? "bg-scalable-500 text-white"
+                  : "bg-[#f7f5f2] text-[#6a6a6a]"
+              }`}
+            >
+              {section.useSubheading ? "Subheading On" : "Subheading Off"}
+            </button>
             <RichTextField
               label="Analysis Content"
               value={section.content || ""}

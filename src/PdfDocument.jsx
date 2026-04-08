@@ -16,6 +16,12 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 
+const MM_TO_PT = 2.83464567;
+const PAGE_MARGIN = 12 * MM_TO_PT;
+const SPACING_4 = 4 * MM_TO_PT;
+const SPACING_8 = 8 * MM_TO_PT;
+const SPACING_12 = 12 * MM_TO_PT;
+
 const dictionary = {
   de: {
     page: "Seite",
@@ -81,6 +87,13 @@ export default function PdfDocument({
     secondaryTitle: "",
     secondaryBody: "",
     ...(formData.page8 || {}),
+  };
+  const coverPage = {
+    metadataText: "",
+    mainTitle: "",
+    subtitle: "",
+    heroImageUrl: "",
+    ...(formData.coverPage || {}),
   };
   const hasPage7Content =
     (page7.title || "").trim().length > 0 || (page7.body || "").trim().length > 0;
@@ -231,32 +244,22 @@ export default function PdfDocument({
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
-        <View style={styles.header}>
-          <Text style={[styles.brand, { color: brandColor }]}>
-            {formData.brand}
-          </Text>
-          <Text style={styles.meta}>
-            {metaDate}
-          </Text>
+      <Page size="A4" style={styles.coverPage}>
+        <View style={styles.coverHeader} />
+        <View style={styles.coverHero}>
+          {coverPage.heroImageUrl ? (
+            <Image style={styles.coverHeroImage} src={coverPage.heroImageUrl} />
+          ) : (
+            <View style={styles.coverHeroPlaceholder}>
+              <Text style={styles.coverHeroPlaceholderText}>Hero image</Text>
+            </View>
+          )}
         </View>
-        {renderInlineText(title, [styles.title, { color: brandColor }], "main-title")}
-
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t.summary}</Text>
-          <View style={styles.richBlock}>
-            {renderRichText(formData.sections.inKuerze)}
-          </View>
+        <Text style={styles.coverMetadata}>{coverPage.metadataText}</Text>
+        <View style={styles.coverTitleBlock}>
+          <Text style={styles.coverMainTitle}>{coverPage.mainTitle}</Text>
+          <Text style={styles.coverSubtitle}>{coverPage.subtitle}</Text>
         </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t.outlook}</Text>
-          <View style={styles.richBlock}>
-            {renderRichText(formData.sections.ausblick)}
-          </View>
-        </View>
-
-        {renderPageNumber(styles.pageNumber)}
       </Page>
 
       <Page size="A4" style={styles.secondPage}>
@@ -355,18 +358,17 @@ export default function PdfDocument({
             </Svg>
           </View>
 
+          <View style={styles.secondPageSummary}>
+            {renderSecondPageSummary(secondPage.summary || "")}
+          </View>
           {renderInlineText(
             secondPage.title || "",
             styles.secondPageTitle,
             "second-page-title"
           )}
-          <View style={styles.secondPageSummary}>
-            {renderSecondPageSummary(secondPage.summary || "")}
-          </View>
 
           <View style={styles.secondPageColumns}>
             <View style={styles.secondPageColumn}>
-              <Text style={styles.secondPageSectionLabel}>{t.summary}</Text>
               {leftSections.map((section, index) => (
                 <View style={styles.secondPageSection} key={`second-left-${index}`}>
                   {renderInlineText(
@@ -417,7 +419,7 @@ export default function PdfDocument({
             <View style={styles.marketAnalysisBlock} key={`market-left-${index}`}>
               {renderInlineText(
                 section.title || "",
-                styles.marketSectionLabel,
+                section.useSubheading ? styles.marketSubheading : styles.marketSectionLabel,
                 `market-analysis-title-${index}`
               )}
               <View style={styles.richBlock}>
@@ -449,13 +451,20 @@ export default function PdfDocument({
         )}
 
         <Text style={styles.marketFootnote}>{wertentwicklungPage.footnote}</Text>
+        {wertentwicklungPage.subtitleAfterFootnote ? (
+          renderInlineText(
+            wertentwicklungPage.subtitleAfterFootnote,
+            styles.marketSubheading,
+            "wertentwicklung-subtitle-after-footnote"
+          )
+        ) : null}
 
         <View style={styles.marketAnalysisSection}>
           {(wertentwicklungPage.analysisSections || []).map((section, index) => (
             <View style={styles.marketAnalysisBlock} key={`wert-left-${index}`}>
               {renderInlineText(
                 section.title || "",
-                styles.marketSectionLabel,
+                section.useSubheading ? styles.marketSubheading : styles.marketSectionLabel,
                 `wert-analysis-title-${index}`
               )}
               <View style={styles.richBlock}>
@@ -471,18 +480,18 @@ export default function PdfDocument({
       {hasPage7Content ? (
         <Page size="A4" style={styles.page}>
           {renderInlineText(page7.title, styles.marketTitle, "page7-title")}
-          <View style={styles.richBlock}>
-            {renderRichText(page7.body || "")}
+          <View style={[styles.richBlock, styles.pageTextSection]}>
+            {renderRichText(page7.body || "", "market")}
           </View>
-          {renderPageNumber(styles.pageNumber)}
+          {renderPageNumber([styles.pageNumber, styles.marketPageNumber])}
         </Page>
       ) : null}
 
       {hasPage8Content ? (
         <Page size="A4" style={styles.page}>
           {renderInlineText(page8.title, styles.marketTitle, "page8-title")}
-          <View style={styles.richBlock}>
-            {renderRichText(page8.body || "")}
+          <View style={[styles.richBlock, styles.pageTextSection]}>
+            {renderRichText(page8.body || "", "market")}
           </View>
           {renderInlineText(
             page8.secondaryTitle,
@@ -490,9 +499,9 @@ export default function PdfDocument({
             "page8-title-2"
           )}
           <View style={styles.richBlock}>
-            {renderRichText(page8.secondaryBody || "")}
+            {renderRichText(page8.secondaryBody || "", "market")}
           </View>
-          {renderPageNumber(styles.pageNumber)}
+          {renderPageNumber([styles.pageNumber, styles.marketPageNumber])}
         </Page>
       ) : null}
     </Document>
@@ -500,8 +509,74 @@ export default function PdfDocument({
 }
 
 const styles = StyleSheet.create({
+  coverPage: {
+    position: "relative",
+    padding: 0,
+    backgroundColor: "#ffffff",
+    fontFamily: "Helvetica",
+  },
+  coverHeader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "35%",
+    backgroundColor: "#000000",
+  },
+  coverHero: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: "65%",
+  },
+  coverHeroImage: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
+  coverHeroPlaceholder: {
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#1f1f1f",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  coverHeroPlaceholderText: {
+    color: "#ffffff",
+    fontSize: 12,
+  },
+  coverMetadata: {
+    position: "absolute",
+    top: 40,
+    right: 40,
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+    color: "#ffffff",
+  },
+  coverTitleBlock: {
+    position: "absolute",
+    left: 40,
+    top: 120,
+    right: 40,
+  },
+  coverMainTitle: {
+    fontSize: 55,
+    fontFamily: "Helvetica-Bold",
+    lineHeight: 1.05,
+    color: "#ffffff",
+  },
+  coverSubtitle: {
+    marginTop: 20,
+    fontSize: 16,
+    fontFamily: "Helvetica",
+    lineHeight: 1.2,
+    color: "#ffffff",
+  },
   page: {
-    padding: 40,
+    padding: PAGE_MARGIN,
     fontSize: 11,
     color: "#111827",
     fontFamily: "Helvetica",
@@ -524,30 +599,31 @@ const styles = StyleSheet.create({
   },
   secondPageContent: {
     position: "relative",
-    paddingTop: 52,
-    paddingHorizontal: 52,
-    paddingBottom: 64,
+    paddingTop: PAGE_MARGIN,
+    paddingHorizontal: PAGE_MARGIN,
+    paddingBottom: PAGE_MARGIN,
     height: "100%",
     justifyContent: "flex-end",
   },
   secondPageLogo: {
     position: "absolute",
-    top: 38,
-    right: 38,
-    width: 120,
+    top: PAGE_MARGIN,
+    right: PAGE_MARGIN,
+    width: 190,
   },
   logoSvg: {
-    width: 120,
-    height: 36,
+    width: 190,
+    height: 57,
   },
   secondPageSummary: {
     marginBottom: 30,
-    maxWidth: 440,
+    maxWidth: "100%",
   },
   secondPageTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: 700,
-    marginBottom: 14,
+    lineHeight: 1.1,
+    marginBottom: 18,
   },
   secondPageSummaryText: {
     fontSize: 16,
@@ -662,68 +738,95 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   marketSubtitle: {
-    marginTop: -6,
-    marginBottom: 10,
+    marginTop: 0,
+    marginBottom: SPACING_4,
     fontSize: 12,
+    lineHeight: 1.3,
+    fontFamily: "Helvetica",
+    color: "#000000",
+  },
+  marketSubheading: {
+    fontSize: 12,
+    lineHeight: 1.3,
+    fontFamily: "Helvetica",
+    marginTop: SPACING_4,
+    marginBottom: SPACING_4 / 2,
     color: "#000000",
   },
   marketFootnote: {
-    marginTop: 2,
+    marginTop: SPACING_4,
     fontSize: 9,
+    lineHeight: 1.4,
+    fontFamily: "Helvetica",
     color: "#000000",
   },
   marketChartImage: {
-    width: 515,
-    height: 291,
-    marginBottom: 10,
+    width: 527,
+    height: 297,
+    marginBottom: SPACING_8,
   },
   marketChartFallback: {
-    marginBottom: 10,
+    marginBottom: SPACING_8,
     fontSize: 9,
+    lineHeight: 1.4,
+    fontFamily: "Helvetica",
     color: "#000000",
   },
   marketTitle: {
-    fontSize: 22,
+    fontSize: 18,
+    lineHeight: 1.1,
     fontWeight: 700,
-    marginTop: 12,
-    marginBottom: 18,
+    fontFamily: "Helvetica-Bold",
+    marginTop: SPACING_8,
+    marginBottom: SPACING_8,
     color: "#000000",
   },
   marketSectionLabel: {
-    fontSize: 12,
+    fontSize: 9,
+    lineHeight: 1.4,
     fontWeight: 700,
-    marginBottom: 6,
+    fontFamily: "Helvetica-Bold",
+    marginBottom: SPACING_4,
     color: "#000000",
   },
   marketBodyText: {
-    fontSize: 11,
+    fontSize: 9,
     lineHeight: 1.4,
+    fontFamily: "Helvetica",
     color: "#000000",
   },
   marketHeadingText: {
-    fontSize: 12,
+    fontSize: 9,
+    lineHeight: 1.4,
     fontWeight: 700,
-    marginBottom: 4,
+    fontFamily: "Helvetica-Bold",
+    marginBottom: SPACING_4 / 2,
     color: "#000000",
   },
   marketBulletMarker: {
     width: 12,
-    fontSize: 11,
+    fontSize: 9,
+    lineHeight: 1.4,
+    fontFamily: "Helvetica",
     color: "#000000",
   },
   marketBulletText: {
     flex: 1,
-    fontSize: 11,
+    fontSize: 9,
     lineHeight: 1.4,
+    fontFamily: "Helvetica",
     color: "#000000",
   },
   marketAnalysisSection: {
-    marginTop: 14,
-    gap: 2,
+    marginTop: SPACING_4,
+    gap: SPACING_4,
   },
   marketAnalysisBlock: {
-    gap: 2,
-    marginBottom: 6,
+    gap: SPACING_4 / 2,
+    marginBottom: SPACING_4,
+  },
+  pageTextSection: {
+    marginBottom: SPACING_8,
   },
   pageNumber: {
     position: "absolute",

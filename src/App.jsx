@@ -20,6 +20,7 @@ const initialMarketAnalysisSections = [
     title: "Aktien",
     content:
       "- 2025 war im historischen Vergleich ein **starkes Jahr für Aktien**: Europäische Titel legten um +20,2 % zu, Schwellenländeraktien um +16 %, die Kurse chinesischer Papiere (A-Aktien) stiegen um +14 %. Das Plus von +3,8 % bei US-Aktien sieht im Vergleich bescheiden aus. Tatsächlich lagen sie so deutlich wie seit 15 Jahren nicht mehr hinter einem globalen Aktienindex ohne US-Titel – etwa dem MSCI ACWI ex USA – zurück. Aus Sicht hiesiger Anlegender spielt ein weiterer Faktor eine gewichtige Rolle: der **Wertverlust des US-Dollar gegenüber dem Euro von -11,9 %**. Dadurch fällt die Rendite für in Euro geführte Depots geringer aus. In ihrer Heimatwährung legten US-Aktien um +17,8 % zu.",
+    useSubheading: false,
   },
 ];
 
@@ -40,6 +41,12 @@ const initialData = {
   reportDate: "31.12.2025",
   quarter: "Q4",
   year: "2025",
+  coverPage: {
+    metadataText: "QUARTERLY REPORT",
+    mainTitle: "Weltportfolio",
+    subtitle: "Jahresrückblick 2025",
+    heroImageUrl: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=80",
+  },
   sections: {
     inKuerze: "2025 war ein starkes Aktienjahr...",
     ausblick: "Eine neue Ära mit massiven staatlichen Eingriffen...",
@@ -87,6 +94,7 @@ const initialData = {
   wertentwicklungPage: {
     title: "Wertentwicklung",
     subtitle: "Wertentwicklung unterschiedlicher Anlageklassen 2025",
+    subtitleAfterFootnote: "",
     chartData: initialWertentwicklungChartData,
     chartDataCsv: initialWertentwicklungChartCsv,
     footnote:
@@ -109,16 +117,32 @@ const STORAGE_KEY = "pdf-generator:formData";
 
 const mergeWithDefaults = (stored) => {
   if (!stored || typeof stored !== "object") return initialData;
+  const mapSections = (sections = []) =>
+    sections.map((section) => ({
+      useSubheading: false,
+      ...section,
+    }));
   return {
     ...initialData,
     ...stored,
     sections: { ...initialData.sections, ...(stored.sections || {}) },
     secondPage: { ...initialData.secondPage, ...(stored.secondPage || {}) },
-    marketPage: { ...initialData.marketPage, ...(stored.marketPage || {}) },
+    marketPage: {
+      ...initialData.marketPage,
+      ...(stored.marketPage || {}),
+      analysisSections: mapSections(
+        stored.marketPage?.analysisSections || initialData.marketPage.analysisSections
+      ),
+    },
     wertentwicklungPage: {
       ...initialData.wertentwicklungPage,
       ...(stored.wertentwicklungPage || {}),
+      analysisSections: mapSections(
+        stored.wertentwicklungPage?.analysisSections ||
+          initialData.wertentwicklungPage.analysisSections
+      ),
     },
+    coverPage: { ...initialData.coverPage, ...(stored.coverPage || {}) },
     page7: { ...initialData.page7, ...(stored.page7 || {}) },
     page8: { ...initialData.page8, ...(stored.page8 || {}) },
     portfolioPerformance:
